@@ -142,9 +142,9 @@ class GltfLoader:
             glm.quat(gltfNode.rotation[3], gltfNode.rotation[0], gltfNode.rotation[1], gltfNode.rotation[2]) if gltfNode.rotation else glm.quat(),
             glm.vec3(*gltfNode.scale) if gltfNode.scale else glm.vec3(1)
         )
-        children = [self.loadNode(child) for childIndex in gltfNode.children if (child := self.gltf.nodes[childIndex]).mesh != None] if gltfNode.children else None
+        children = [self.loadNode(child) for childIndex in gltfNode.children if (child := self.gltf.nodes[childIndex]).mesh is not None] if gltfNode.children else None
 
         return Object(mesh, transform, children, gltfNode.name)
 
     def loadRootObjects(self):
-        return [self.loadNode(node) for rootNodeIndex in self.mainGltfScene.nodes if (node := self.gltf.nodes[rootNodeIndex]).mesh != None]
+        return [self.loadNode(node) for rootNodeIndex in self.mainGltfScene.nodes if (node := self.gltf.nodes[rootNodeIndex]).mesh is not None]

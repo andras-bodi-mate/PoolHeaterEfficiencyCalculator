@@ -1,13 +1,19 @@
-from pyglm import glm
 from abc import ABC, abstractmethod
+from typing import Optional
+
+from pyglm import glm
+
+from controller import Controller
 
 class Camera(ABC):
-    def __init__(self):
+    def __init__(self, controller: Optional[Controller] = None):
+        self.position = glm.vec3(0.0)
+        self.forward = glm.vec3(0.0, 0.0, -1.0)
+
         self.projectionMatrix: glm.mat4x4 = None
         self.viewMatrix: glm.mat4x4 = None
 
-        self.updateProjectionMatrix(1.0)
-        self.updateViewMatrix()
+        self.controller = controller
 
     @abstractmethod
     def updateProjectionMatrix(self, aspectRatio: float):
@@ -15,4 +21,5 @@ class Camera(ABC):
 
     @abstractmethod
     def updateViewMatrix(self):
-        pass
+        if self.controller is not None:
+            self.controller.update(self)

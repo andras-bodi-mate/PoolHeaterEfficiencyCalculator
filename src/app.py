@@ -55,11 +55,11 @@ class App:
         sunPosition = self.sunPositionCalculator.pos(viewportTimeUnix, self.latitude, self.longitude)
         sunlightTransmission = self.getSunlightTransmission(viewportTime)
 
-        self.viewport.scene.sunPosition = glm.vec2(sunPosition.azimuth, sunPosition.altitude)
-        self.viewport.scene.sunlightTransmission = glm.float32(sunlightTransmission)
-        self.viewport.scene.sunCamera.direction = -glm.euclidean(glm.vec2(self.viewport.scene.sunPosition.y, -self.viewport.scene.sunPosition.x + glm.half_pi()))
-        self.viewport.scene.sunCamera.updateCameraProjection()
-        self.viewport.scene.sunCamera.updatePerspectiveProjection(self.viewport.width() / self.viewport.height())
+        self.viewport.scene.sunLight.position = glm.vec2(sunPosition.azimuth, sunPosition.altitude)
+        self.viewport.scene.sunLight.sunlightTransmission = glm.float32(sunlightTransmission)
+        self.viewport.scene.sunCamera.forward = -glm.euclidean(glm.vec2(self.viewport.scene.sunLight.position.y, -self.viewport.scene.sunLight.position.x + glm.half_pi()))
+        self.viewport.scene.sunCamera.updateViewMatrix()
+        self.viewport.scene.sunCamera.updateProjectionMatrix(self.viewport.width() / self.viewport.height())
 
         self.timeMarker.setValue(glm.mix(0, 24, self.viewportTimeSlider.slider.value() / (24 * 60)))
 
@@ -68,7 +68,15 @@ class App:
         self.viewport.repaint()
 
     def selectedSolarCollectorChanged(self):
-        self.viewport.scene.selectedSolarCollector = self.solarCollectorLocationSelector.selector.currentData()
+        self.viewport.scene.roofSolarCollector.object.isVisible = False
+        self.viewport.scene.shedSolarCollector.object.isVisible = False
+
+        match self.solarCollectorLocationSelector.selector.currentData():
+            case SolarCollectorLocation.OnRoof:
+                self.viewport.scene.roofSolarCollector.object.isVisible = True
+            case SolarCollectorLocation.OnShed:
+                self.viewport.scene.shedSolarCollector.object.isVisible = True
+
         self.viewport.repaint()
 
     def initializeQt(self):
@@ -90,6 +98,7 @@ class App:
 
         qtc.QTimer.singleShot(0, self.dateChanged)
         qtc.QTimer.singleShot(0, self.timeChanged)
+        qtc.QTimer.singleShot(0, self.selectedSolarCollectorChanged)
 
         self.window = qtw.QMainWindow()
         self.mainWidget = qtw.QWidget()

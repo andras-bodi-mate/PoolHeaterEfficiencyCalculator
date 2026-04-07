@@ -1,15 +1,14 @@
 from pyglm import glm
 
 from camera import Camera
+from controller import Controller
 
 class PerspectiveCamera(Camera):
-    def __init__(self):
-        super().__init__()
-        self.pitch = -0.4
-        self.yaw = 0.0
-        self.distance = 10
-        self.turnSensitivity = 0.005
-        self.zoomSensitivity = 0.005
+    def __init__(self, controller: Controller = None):
+        super().__init__(controller)
+
+        self.updateProjectionMatrix(1.0)
+        self.updateViewMatrix()
 
     def updateProjectionMatrix(self, aspectRatio):
         self.projectionMatrix = glm.perspective(
@@ -20,17 +19,5 @@ class PerspectiveCamera(Camera):
         )
 
     def updateViewMatrix(self):
-        orbitPosition = self.getPosition()
-        position = orbitPosition
-        forward = -self.distance * glm.normalize(orbitPosition)
-        self.viewMatrix = glm.lookAt(position, position + forward, glm.vec3(0, 1, 0))
-
-    def getPosition(self):
-        return self.distance * (glm.quat(glm.vec3(self.pitch, self.yaw, 0)) * glm.vec3(0, 0, 1))
-    
-    def rotate(self, mouseDelta: glm.vec2):
-        self.pitch = glm.clamp(self.pitch - mouseDelta.y / 100, glm.radians(-89), glm.radians(89))
-        self.yaw += -mouseDelta.x / 100
-
-    def zoom(self, angleDelta: float):
-        self.distance *= (1 - self.zoomSensitivity) ** angleDelta
+        super().updateViewMatrix()
+        self.viewMatrix = glm.lookAt(self.position, self.position + self.forward, glm.vec3(0, 1, 0))

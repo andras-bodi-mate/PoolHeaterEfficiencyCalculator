@@ -5,11 +5,16 @@ from PyQt6 import QtOpenGL as qgl
 from PyQt6 import QtOpenGLWidgets as qglw
 import moderngl as gl
 from pyglm import glm
-from math import pi
 
 from core import Core
 from scene import Scene
-from material import Material
+from perspectiveCamera import PerspectiveCamera
+from orthographicCamera import OrthographicCamera
+from orbitController import OrbitController
+from sunLight import SunLight
+from house import House
+from solarCollector import SolarCollector
+from renderer import Renderer
 
 class Viewport(qglw.QOpenGLWidget):
     def __init__(self):
@@ -34,6 +39,22 @@ class Viewport(qglw.QOpenGLWidget):
         self.aspectRatio = 1.0
 
         self.scene = Scene()
+        self.scene.rootObjects.append(House())
+        self.scene.roofSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnRoof.gltf"))
+        self.scene.shedSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnShed.gltf"))
+        self.scene.rootObjects.append(self.scene.roofSolarCollector)
+        self.scene.rootObjects.append(self.scene.shedSolarCollector)
+
+        self.scene.userCamera = PerspectiveCamera(controller = OrbitController())
+        self.scene.sunCamera = OrthographicCamera()
+        self.scene.cameras.append(self.scene.userCamera)
+        self.scene.cameras.append(self.scene.sunCamera)
+        self.scene.activeCamera = self.scene.userCamera
+
+        self.scene.sunLight = SunLight()
+        self.scene.lights.append(self.scene.sunLight)
+
+        self.renderer = Renderer()
 
     def setupContextForRender(self):
         self.glContext.enable(gl.DEPTH_TEST)
@@ -64,7 +85,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.setupContextForRender()
         self.frameBuffer.clear(blue = 1.0)
 
-        self.scene.render()
+        self.renderer.render(self.scene)
 
         self.restoreContextForQt()
         painter.endNativePainting()
@@ -83,8 +104,9 @@ class Viewport(qglw.QOpenGLWidget):
         devicePixelRatio = self.devicePixelRatioF()
         self.glContext.viewport = (0, 0, int(w * devicePixelRatio), int(h * devicePixelRatio))
         self.aspectRatio = self.width() / self.height()
-        self.scene.camera.updatePerspectiveProjection(self.aspectRatio)
-        self.scene.sunCamera.updatePerspectiveProjection(self.aspectRatio)
+
+        for camera in self.scene.cameras:
+            camera.updateProjectionMatrix(self.aspectRatio)
 
     def mousePressEvent(self, event: qtg.QMouseEvent):
         super().mousePressEvent(event)
@@ -92,24 +114,25 @@ class Viewport(qglw.QOpenGLWidget):
 
     def mouseMoveEvent(self, event: qtg.QMouseEvent):
         super().mouseMoveEvent(event)
-        if self.activeCameraCheckbox.isChecked():
+        if not self.scene.activeCamera.controller:
             return
         
         currentPosition = Core.toVec2(event.globalPosition())
         mouseDelta = currentPosition - self.prevMousePos
         self.prevMousePos = currentPosition
-        self.scene.camera.rotate(mouseDelta)
-        self.scene.camera.updateCameraProjection()
+
+        self.scene.activeCamera.controller.mouseDragged(mouseDelta)
+        self.scene.activeCamera.updateViewMatrix()
         self.repaint()
     
     def wheelEvent(self, event: qtg.QWheelEvent):
         super().wheelEvent(event)
-        if self.activeCameraCheckbox.isChecked():
+        if not self.scene.activeCamera.controller:
             return
 
         angleDelta = Core.toVec2(event.angleDelta()).y
-        self.scene.camera.zoom(angleDelta)
-        self.scene.camera.updateCameraProjection()
+        self.scene.activeCamera.controller.wheelScrolled(angleDelta)
+        self.scene.activeCamera.updateViewMatrix()
         self.repaint()
 
     def keyPressEvent(self, event: qtg.QKeyEvent):
@@ -118,21 +141,11 @@ class Viewport(qglw.QOpenGLWidget):
             return
         
         if event.key() == qtc.Qt.Key.Key_R and event.modifiers() & qtc.Qt.KeyboardModifier.ControlModifier:
-            self.makeCurrent()
-            prevCamera = self.scene.camera
-            self.scene.release()
-            Material.invalidateShaderCaches()
-
-            self.scene = Scene()
-            self.scene.initialize()
-            self.scene.camera = prevCamera
-            self.doneCurrent()
-
-            self.repaint()
+            pass
 
     def activeCameraChanged(self):
         if self.activeCameraCheckbox.isChecked():
             self.scene.activeCamera = self.scene.sunCamera
         else:
-            self.scene.activeCamera = self.scene.camera
+            self.scene.activeCamera = self.scene.userCamera
         self.repaint()

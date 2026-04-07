@@ -9,10 +9,10 @@ class Renderer:
         pass
 
     def render(self, scene: Scene):
-        Material.setUniformOnMaterials("u_perspectiveProjection", self.activeCamera.perspectiveProjection)
-        Material.setUniformOnMaterials("u_cameraProjection", self.activeCamera.cameraProjection)
-        Material.setUniformOnMaterials("u_sunPosition", self.sunPosition)
-        Material.setUniformOnMaterials("u_sunlightTransmission", self.sunlightTransmission)
+        Material.setUniformOnMaterials("u_perspectiveProjection", scene.activeCamera.projectionMatrix)
+        Material.setUniformOnMaterials("u_cameraProjection", scene.activeCamera.viewMatrix)
+        Material.setUniformOnMaterials("u_sunPosition", scene.sunLight.position)
+        Material.setUniformOnMaterials("u_sunlightTransmission", scene.sunLight.sunlightTransmission)
 
         for object in scene.rootObjects:
             object.render()
