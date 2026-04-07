@@ -15,6 +15,12 @@ class Viewport(qglw.QOpenGLWidget):
     def __init__(self):
         super().__init__()
 
+        self.viewportLayout = qtw.QHBoxLayout()
+        self.activeCameraCheckbox = qtw.QCheckBox("Switch to sun camera")
+        self.activeCameraCheckbox.checkStateChanged.connect(self.activeCameraChanged)
+        self.viewportLayout.addWidget(self.activeCameraCheckbox, alignment = qtc.Qt.AlignmentFlag.AlignTop | qtc.Qt.AlignmentFlag.AlignRight)
+        self.setLayout(self.viewportLayout)
+
         self.setFocusPolicy(qtc.Qt.FocusPolicy.StrongFocus)
     
         self.glContext: gl.Context = None
@@ -25,6 +31,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.framesSinceLastFpsUpdate = 0
         self.frameRate = 0
         self.prevMousePos: glm.vec2 = None
+        self.aspectRatio = 1.0
 
         self.scene = Scene()
 
@@ -55,7 +62,7 @@ class Viewport(qglw.QOpenGLWidget):
 
         self.frameBuffer.use()
         self.setupContextForRender()
-        self.frameBuffer.clear()
+        self.frameBuffer.clear(blue = 1.0)
 
         self.scene.render()
 
@@ -75,7 +82,9 @@ class Viewport(qglw.QOpenGLWidget):
         super().resizeGL(w, h)
         devicePixelRatio = self.devicePixelRatioF()
         self.glContext.viewport = (0, 0, int(w * devicePixelRatio), int(h * devicePixelRatio))
-        self.scene.camera.updatePerspectiveProjection(self.width() / self.height())
+        self.aspectRatio = self.width() / self.height()
+        self.scene.camera.updatePerspectiveProjection(self.aspectRatio)
+        self.scene.sunCamera.updatePerspectiveProjection(self.aspectRatio)
 
     def mousePressEvent(self, event: qtg.QMouseEvent):
         super().mousePressEvent(event)
@@ -83,6 +92,9 @@ class Viewport(qglw.QOpenGLWidget):
 
     def mouseMoveEvent(self, event: qtg.QMouseEvent):
         super().mouseMoveEvent(event)
+        if self.activeCameraCheckbox.isChecked():
+            return
+        
         currentPosition = Core.toVec2(event.globalPosition())
         mouseDelta = currentPosition - self.prevMousePos
         self.prevMousePos = currentPosition
@@ -92,6 +104,9 @@ class Viewport(qglw.QOpenGLWidget):
     
     def wheelEvent(self, event: qtg.QWheelEvent):
         super().wheelEvent(event)
+        if self.activeCameraCheckbox.isChecked():
+            return
+
         angleDelta = Core.toVec2(event.angleDelta()).y
         self.scene.camera.zoom(angleDelta)
         self.scene.camera.updateCameraProjection()
@@ -113,4 +128,11 @@ class Viewport(qglw.QOpenGLWidget):
             self.scene.camera = prevCamera
             self.doneCurrent()
 
+            self.repaint()
+
+    def activeCameraChanged(self):
+        if self.activeCameraCheckbox.isChecked():
+            self.scene.activeCamera = self.scene.sunCamera
+        else:
+            self.scene.activeCamera = self.scene.camera
         self.repaint()

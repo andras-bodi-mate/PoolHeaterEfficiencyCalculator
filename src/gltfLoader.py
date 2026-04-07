@@ -147,4 +147,4 @@ class GltfLoader:
         return Object(mesh, transform, children, gltfNode.name)
 
     def loadRootObjects(self):
-        return [self.loadNode(node) for rootNodeIndex in self.mainGltfScene.nodes if (node := self.gltf.nodes[rootNodeIndex]).mesh]
+        return [self.loadNode(node) for rootNodeIndex in self.mainGltfScene.nodes if (node := self.gltf.nodes[rootNodeIndex]).mesh != None]

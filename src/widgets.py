@@ -4,6 +4,8 @@ import PyQt6.QtWidgets as qtw
 import pyqtgraph as pg
 import numpy as np
 
+from solarCollector import SolarCollectorLocation
+
 class Plot(pg.PlotWidget):
     def __init__(self, title, lineColor, areaUnderCurveColor=None):
         super().__init__(title=title)
@@ -35,4 +37,20 @@ class Slider(qtw.QWidget):
         self.slider.setRange(minimum, maximum)
         self.contentLayout.addWidget(self.label)
         self.contentLayout.addWidget(self.slider)
+        self.setLayout(self.contentLayout)
+
+class SolarCollectorLocationSelector(qtw.QWidget):
+    def __init__(self, items: list[tuple[str, SolarCollectorLocation]], parent = None):
+        super().__init__(parent)
+
+        self.contentLayout = qtw.QVBoxLayout()
+
+        self.label = qtw.QLabel("Solar collector location:")
+
+        self.selector = qtw.QComboBox()
+        for text, value in items:
+            self.selector.addItem(text, value)
+
+        self.contentLayout.addWidget(self.label)
+        self.contentLayout.addWidget(self.selector)
         self.setLayout(self.contentLayout)

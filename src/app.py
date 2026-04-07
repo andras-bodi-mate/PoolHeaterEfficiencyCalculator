@@ -10,7 +10,8 @@ from pyglm import glm
 from sun_position_calculator import SunPositionCalculator
 
 from viewport import Viewport
-from widgets import Slider, Plot
+from widgets import Slider, Plot, SolarCollectorLocationSelector
+from solarCollector import SolarCollectorLocation
 
 class App:
     def __init__(self):
@@ -18,11 +19,15 @@ class App:
         self.utcPlus2 = datetime.timezone(datetime.timedelta(hours=2))
         self.sunPositionCalculator = SunPositionCalculator()
         self.latitude, self.longitude = 48.117245, 20.663500
+        self.areosolOpticalDepth = 0.15
 
     def getSunlightTransmission(self, time: datetime.datetime):
         altitude = self.sunPositionCalculator.pos(time.timestamp() * 1000, self.latitude, self.longitude).altitude
-        airMass = 1 / math.sin(altitude)
-        transmission = 0.75 ** airMass
+        if altitude <= 0:
+            return 0.0
+
+        airMass = 1 / (math.sin(altitude) + 0.50572 * (altitude + 6.07995)**-1.6364)
+        transmission = math.exp(-self.areosolOpticalDepth * airMass)
         return transmission
 
     def dateChanged(self):
@@ -52,11 +57,18 @@ class App:
 
         self.viewport.scene.sunPosition = glm.vec2(sunPosition.azimuth, sunPosition.altitude)
         self.viewport.scene.sunlightTransmission = glm.float32(sunlightTransmission)
+        self.viewport.scene.sunCamera.direction = -glm.euclidean(glm.vec2(self.viewport.scene.sunPosition.y, -self.viewport.scene.sunPosition.x + glm.half_pi()))
+        self.viewport.scene.sunCamera.updateCameraProjection()
+        self.viewport.scene.sunCamera.updatePerspectiveProjection(self.viewport.width() / self.viewport.height())
 
         self.timeMarker.setValue(glm.mix(0, 24, self.viewportTimeSlider.slider.value() / (24 * 60)))
 
         self.viewportTimeSlider.label.setText(f"Viewport time: {viewportTime.hour:02}:{viewportTime.minute:02}")
 
+        self.viewport.repaint()
+
+    def selectedSolarCollectorChanged(self):
+        self.viewport.scene.selectedSolarCollector = self.solarCollectorLocationSelector.selector.currentData()
         self.viewport.repaint()
 
     def initializeQt(self):
@@ -89,10 +101,16 @@ class App:
         self.sidePanelLayout = qtw.QVBoxLayout()
 
         self.dateSlider = Slider("Date", 0, 364)
-
         self.dateSlider.slider.valueChanged.connect(self.dateChanged)
+        self.solarCollectorLocationSelector = SolarCollectorLocationSelector([
+            ("On roof", SolarCollectorLocation.OnRoof),
+            ("On shed", SolarCollectorLocation.OnShed),
+            ("Next to pool", SolarCollectorLocation.NextToPool)
+        ])
+        self.solarCollectorLocationSelector.selector.currentIndexChanged.connect(self.selectedSolarCollectorChanged)
 
         self.sidePanelLayout.addWidget(self.dateSlider)
+        self.sidePanelLayout.addWidget(self.solarCollectorLocationSelector)
 
         self.sidePanelLayout.addStretch()
         self.sidePanel.setLayout(self.sidePanelLayout)
@@ -102,6 +120,7 @@ class App:
         self.viewportPlotSplitter = qtw.QSplitter(qtc.Qt.Orientation.Vertical)
         
         self.viewport = Viewport()
+
         self.powerPlot = Plot("Power efficiency", (255, 255, 0), (255, 255, 0, 100))
         self.timeMarker = pg.InfiniteLine(pos = 0, angle = 90, pen = pg.mkPen((255, 0, 0), width = 2))
         self.powerPlot.addItem(self.timeMarker)
@@ -109,6 +128,7 @@ class App:
         self.viewportPlotSplitter.addWidget(self.powerPlot)
         self.viewportPlotSplitter.setStretchFactor(0, 1)
         self.viewportPlotSplitter.setStretchFactor(1, 1)
+        self.viewportPlotSplitter.setSizes([1, 1])
 
         self.viewportTimeSlider = Slider("Viewport time", 0, 24 * 60 - 1)
         self.viewportTimeSlider.slider.valueChanged.connect(self.timeChanged)
