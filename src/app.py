@@ -55,9 +55,25 @@ class App:
 
         self.timeMarker.setValue(glm.mix(0, 24, self.viewportTimeSlider.slider.value() / (24 * 60)))
 
+        self.viewportTimeSlider.label.setText(f"Viewport time: {viewportTime.hour:02}:{viewportTime.minute:02}")
+
         self.viewport.repaint()
 
+    def initializeQt(self):
+        surfaceFormat = qtg.QSurfaceFormat()
+        surfaceFormat.setVersion(3, 3)
+        surfaceFormat.setProfile(qtg.QSurfaceFormat.OpenGLContextProfile.CoreProfile)
+        surfaceFormat.setDepthBufferSize(24)
+        surfaceFormat.setStencilBufferSize(8)
+        surfaceFormat.setSwapInterval(1) # Enables vertical sync (vsync)
+        surfaceFormat.setSwapBehavior(qtg.QSurfaceFormat.SwapBehavior.DoubleBuffer)
+        samples = 1
+        if samples > 1:
+            surfaceFormat.setSamples(samples)
+        qtg.QSurfaceFormat.setDefaultFormat(surfaceFormat)
+
     def start(self):
+        self.initializeQt()
         self.qtApp = qtw.QApplication([])
 
         qtc.QTimer.singleShot(0, self.dateChanged)
@@ -94,7 +110,7 @@ class App:
         self.viewportPlotSplitter.setStretchFactor(0, 1)
         self.viewportPlotSplitter.setStretchFactor(1, 1)
 
-        self.viewportTimeSlider = Slider("Viewport time", 0, 24 * 60)
+        self.viewportTimeSlider = Slider("Viewport time", 0, 24 * 60 - 1)
         self.viewportTimeSlider.slider.valueChanged.connect(self.timeChanged)
 
         self.contentPanelLayout.addWidget(self.viewportTimeSlider)
