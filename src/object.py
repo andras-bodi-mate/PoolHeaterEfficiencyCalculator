@@ -12,6 +12,7 @@ class Object:
         self.transform = transform
         self.children: list["Object"] = children if children else []
         self.name = name
+        self.isVisible = True
 
     def initialize(self):
         self.mesh.initialize()
@@ -19,6 +20,9 @@ class Object:
             child.initialize()
 
     def render(self, ancestorTransforms: list[glm.mat4x4] = None):
+        if not self.isVisible:
+            return
+
         transform = self.transform.getMatrix()
         ancestorTransforms = ancestorTransforms + [transform] if ancestorTransforms else [transform]
         finalTransform = reduce(lambda a, b: b * a, reversed(ancestorTransforms))

@@ -1,48 +1,32 @@
-import moderngl as gl
-import numpy as np
-from pyglm import glm
+from typing import Optional
 
-from core import Core
+import moderngl as gl
+
 from camera import Camera
-from sunCamera import SunCamera
-from material import Material
-from house import House
-from solarCollector import SolarCollector, SolarCollectorLocation
+from object import Object
+from light import Light
 
 class Scene:
     def __init__(self):
         self.glContext: gl.Context = None
-        self.camera = Camera()
-        self.house = House()
-        self.roofSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnRoof.gltf"))
-        self.shedSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnShed.gltf"))
-        self.sunCamera = SunCamera()
-        self.sunPosition: glm.vec2 = glm.vec2(0)
-        self.sunlightTransmission: float = glm.float32(0)
 
-        self.activeCamera: Camera | SunCamera = self.camera
-        self.selectedSolarCollector = SolarCollectorLocation.OnRoof
+        self.rootObjects: list[Object] = []
+        self.cameras: list[Camera] = []
+        self.lights: list[Light] = []
+
+        self.activeCamera: Camera = None
+
+        self.userCamera: Optional[Per]
 
     def initialize(self):
         self.glContext = gl.get_context()
-        self.house.initialize()
-        self.roofSolarCollector.initialize()
-        self.shedSolarCollector.initialize()
-
-    def render(self):
-        Material.setUniformOnMaterials("u_perspectiveProjection", self.activeCamera.perspectiveProjection)
-        Material.setUniformOnMaterials("u_cameraProjection", self.activeCamera.cameraProjection)
-        Material.setUniformOnMaterials("u_sunPosition", self.sunPosition)
-        Material.setUniformOnMaterials("u_sunlightTransmission", self.sunlightTransmission)
-
-        self.house.render()
-        match self.selectedSolarCollector:
-            case SolarCollectorLocation.OnRoof:
-                self.roofSolarCollector.render()
-            case SolarCollectorLocation.OnShed:
-                self.shedSolarCollector.render()
+        for object in self.rootObjects:
+            object.initialize()
+        for light in self.lights:
+            light.initialize()
 
     def release(self):
-        self.house.release()
-        self.roofSolarCollector.release()
-        self.shedSolarCollector.release()
+        for object in self.rootObjects:
+            object.release()
+        for light in self.lights:
+            light.initialize()
