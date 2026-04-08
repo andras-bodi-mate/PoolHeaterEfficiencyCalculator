@@ -1,4 +1,4 @@
-#version 330
+#version 330 core
 #include utilities.glsl
 
 uniform vec2 u_sunPosition;

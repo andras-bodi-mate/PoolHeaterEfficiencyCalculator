@@ -1,4 +1,4 @@
-#version 330
+#version 330 core
 #include utilities.glsl
 
 uniform mat4 u_perspectiveProjection;

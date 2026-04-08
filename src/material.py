@@ -25,7 +25,7 @@ class Material:
     def setUniformOnMaterials(uniformName: str, value):
         for material in Material.materials:
             uniform = material.program.get(uniformName, None)
-            if uniform:
+            if uniform is not None:
                 uniform.write(value)
 
     @staticmethod
@@ -68,7 +68,7 @@ class Material:
     def initialize(self):
         self.glContext = gl.get_context()
         cachedProgram = Material.shaderProgramCache.get(self.shaderProgramIdentifier)
-        if cachedProgram:
+        if cachedProgram is not None:
             self.program = cachedProgram
         else:
             self.program = self.glContext.program(

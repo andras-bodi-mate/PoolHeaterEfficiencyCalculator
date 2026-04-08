@@ -81,7 +81,7 @@ class GltfLoader:
 
             viewedBuffer = stridedArray.reshape(-1).tobytes()
 
-        if accessor.byteOffset:
+        if accessor.byteOffset is not None:
             byteLength = elementSize * accessor.count
             return viewedBuffer[accessor.byteOffset : (accessor.byteOffset + byteLength)]
         else:
