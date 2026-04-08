@@ -60,6 +60,9 @@ class App:
         self.viewport.scene.sunCamera.forward = -glm.euclidean(glm.vec2(self.viewport.scene.sunLight.position.y, -self.viewport.scene.sunLight.position.x + glm.half_pi()))
         self.viewport.scene.sunCamera.updateViewMatrix()
         self.viewport.scene.sunCamera.updateProjectionMatrix(self.viewport.width() / self.viewport.height())
+        self.viewport.scene.shadowCamera.position = self.viewport.scene.sunCamera.position
+        self.viewport.scene.shadowCamera.forward = self.viewport.scene.sunCamera.forward
+        self.viewport.scene.shadowCamera.updateViewMatrix()
 
         self.timeMarker.setValue(glm.mix(0, 24, self.viewportTimeSlider.slider.value() / (24 * 60)))
 

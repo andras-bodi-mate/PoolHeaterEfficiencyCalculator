@@ -23,6 +23,7 @@ class Scene(GraphicsResource):
 
         self.userCamera: Optional[PerspectiveCamera] = None
         self.sunCamera: Optional[OrthographicCamera] = None
+        self.shadowCamera: Optional[OrthographicCamera] = None
         self.sunLight: Optional[SunLight] = None
         self.roofSolarCollector: Optional[SolarCollector] = None
         self.shedSolarCollector: Optional[SolarCollector] = None

@@ -51,8 +51,10 @@ class Viewport(qglw.QOpenGLWidget):
 
         self.scene.userCamera = PerspectiveCamera(controller = OrbitController())
         self.scene.sunCamera = OrthographicCamera()
+        self.scene.shadowCamera = OrthographicCamera(fixedAspectRatio = True)
         self.scene.cameras.append(self.scene.userCamera)
         self.scene.cameras.append(self.scene.sunCamera)
+        self.scene.cameras.append(self.scene.shadowCamera)
         self.scene.activeCamera = self.scene.userCamera
 
         self.scene.sunLight = SunLight()
@@ -64,7 +66,10 @@ class Viewport(qglw.QOpenGLWidget):
         self.glContext.enable(gl.DEPTH_TEST)
 
     def restoreContextForQt(self):
-        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self.defaultFramebufferObject())
+        framebufferObject = self.defaultFramebufferObject()
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, framebufferObject)
+        GL.glBindFramebuffer(GL.GL_READ_FRAMEBUFFER, framebufferObject)
+        GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, framebufferObject)
 
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 4)
         GL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 4)
@@ -138,7 +143,8 @@ class Viewport(qglw.QOpenGLWidget):
         self.aspectRatio = self.width() / self.height()
 
         for camera in self.scene.cameras:
-            camera.updateProjectionMatrix(self.aspectRatio)
+            if not camera.fixedAspectRatio:
+                camera.updateProjectionMatrix(self.aspectRatio)
 
     def mousePressEvent(self, event: qtg.QMouseEvent):
         super().mousePressEvent(event)

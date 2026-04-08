@@ -4,8 +4,8 @@ from camera import Camera
 from controller import Controller
 
 class PerspectiveCamera(Camera):
-    def __init__(self, controller: Controller = None):
-        super().__init__(controller)
+    def __init__(self, controller: Controller = None, fixedAspectRatio = False):
+        super().__init__(controller, fixedAspectRatio)
 
         self.updateProjectionMatrix(1.0)
         self.updateViewMatrix()

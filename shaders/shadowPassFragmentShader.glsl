@@ -3,8 +3,6 @@
 
 uniform uint u_objectId;
 
-in vec3 v_position;
-
 layout (location = 0) out uint out_color;
 
 void main() {

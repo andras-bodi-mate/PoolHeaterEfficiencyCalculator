@@ -16,7 +16,7 @@ class SunLight(Light):
     def initialize(self):
         super().initialize()
         self.shadowMap = self.glContext.depth_texture((self.framebufferResolution, self.framebufferResolution))
-        self.objectTypeMap = self.glContext.texture((self.framebufferResolution, self.framebufferResolution), 1, dtype = "i1")
+        self.objectTypeMap = self.glContext.texture((self.framebufferResolution, self.framebufferResolution), 1, dtype = "u4")
         self.framebuffer = self.glContext.framebuffer(color_attachments = [self.objectTypeMap], depth_attachment = self.shadowMap)
 
     def release(self):

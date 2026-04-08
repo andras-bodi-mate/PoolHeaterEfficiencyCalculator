@@ -6,7 +6,8 @@ from pyglm import glm
 from controller import Controller
 
 class Camera(ABC):
-    def __init__(self, controller: Optional[Controller] = None):
+    def __init__(self, controller: Optional[Controller] = None, fixedAspectRatio = False):
+        self.fixedAspectRatio = fixedAspectRatio
         self.position = glm.vec3(0.0)
         self.forward = glm.vec3(0.0, 0.0, -1.0)
 
