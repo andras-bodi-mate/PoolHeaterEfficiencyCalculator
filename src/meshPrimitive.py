@@ -3,6 +3,7 @@ from numpy.typing import NDArray
 import moderngl as gl
 
 from material import Material
+from renderPass import RenderPass
 
 class MeshPrimitive:
     def __init__(self, vertices: NDArray[np.float32], normals: NDArray[np.float32],
@@ -35,7 +36,7 @@ class MeshPrimitive:
             index_buffer = self.indexBuffer
         )
 
-    def render(self):
+    def render(self, renderPass: RenderPass):
         self.material.use()
         self.vertexArray.render()
 
@@ -45,3 +46,4 @@ class MeshPrimitive:
         self.uvBuffer.release()
         self.normalBuffer.release()
         self.vertexBuffer.release()
+        self.material.release()

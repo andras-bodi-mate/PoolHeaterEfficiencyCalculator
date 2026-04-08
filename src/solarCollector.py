@@ -1,27 +1,28 @@
 from enum import Enum
+from pathlib import Path
 
 from pyglm import glm
 
 from transform import Transform
-from core import Core
+from object import Object
 from gltfLoader import GltfLoader
+from renderPass import RenderPass
 
 class SolarCollectorLocation(Enum):
     OnRoof = 1
     OnShed = 2
     NextToPool = 3
 
-class SolarCollector:
-    def __init__(self, modelPath):
-        gltfLoader = GltfLoader(modelPath)
-        self.object = gltfLoader.loadRootObjects()[0]
-        self.transform = Transform(glm.vec3(0.0, 0.0, 0.0))
+class SolarCollector(Object):
+    def __init__(self, modelPath: Path):
+        loaded = GltfLoader.loadFirstObject(modelPath)
+        super().__init__(loaded.mesh, loaded.transform, loaded.children, loaded.name)
 
     def initialize(self):
-        self.object.initialize()
+        super().initialize()
 
-    def render(self):
-        self.object.render([self.transform.getMatrix()])
+    def render(self, renderPass: RenderPass, ancestorTransforms: list[glm.mat4x4] = None):
+        super().render(renderPass, ancestorTransforms)
 
     def release(self):
-        self.object.release()
+        super().release()

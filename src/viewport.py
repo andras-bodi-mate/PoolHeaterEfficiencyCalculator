@@ -5,6 +5,7 @@ from PyQt6 import QtOpenGL as qgl
 from PyQt6 import QtOpenGLWidgets as qglw
 import moderngl as gl
 from pyglm import glm
+from OpenGL import GL
 
 from core import Core
 from scene import Scene
@@ -27,6 +28,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.setLayout(self.viewportLayout)
 
         self.setFocusPolicy(qtc.Qt.FocusPolicy.StrongFocus)
+        qtw.QApplication.instance().aboutToQuit.connect(self.cleanup)
     
         self.glContext: gl.Context = None
         self.frameBuffer: gl.Framebuffer = None
@@ -37,6 +39,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.frameRate = 0
         self.prevMousePos: glm.vec2 = None
         self.aspectRatio = 1.0
+        self.hasCleanedUp = True
 
         self.scene = Scene()
         self.scene.rootObjects.append(House())
@@ -60,7 +63,15 @@ class Viewport(qglw.QOpenGLWidget):
         self.glContext.enable(gl.DEPTH_TEST)
 
     def restoreContextForQt(self):
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self.defaultFramebufferObject())
+
+        GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 4)
+        GL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 4)
+
         self.glContext.disable(gl.DEPTH_TEST)
+        self.glContext.disable(gl.CULL_FACE)
+        self.glContext.disable(GL.GL_SCISSOR_TEST)
+        self.glContext.disable(gl.BLEND)
 
     def initializeGL(self):
         super().initializeGL()
@@ -68,6 +79,19 @@ class Viewport(qglw.QOpenGLWidget):
         self.setupContextForRender()
 
         self.scene.initialize()
+        self.renderer.initialize()
+
+        self.hasCleanedUp = False
+        self.restoreContextForQt()
+
+    def cleanup(self):
+        if self.hasCleanedUp:
+            return
+
+        self.makeCurrent()
+        self.scene.release()
+        self.doneCurrent()
+        self.hasCleanedUp = True
 
     def paintGL(self):
         super().paintGL()

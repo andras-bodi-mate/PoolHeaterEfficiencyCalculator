@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import moderngl as gl
 
 from core import Core
+from graphicsResource import GraphicsResource
 
 @dataclass(frozen = True)
 class ShaderProgramIdentifier:
@@ -11,10 +12,11 @@ class ShaderProgramIdentifier:
     fragmentShaderPath: Path | None = field(default = None, hash = True)
     capturedVaryings: tuple[str] = field(default = (), hash = True)
 
-class Material:
+class Material(GraphicsResource):
     materials: list["Material"] = []
     shaderSourceCache: dict[Path, str] = {}
     shaderProgramCache: dict[ShaderProgramIdentifier, gl.Program] = {}
+    shaderReferences: dict[ShaderProgramIdentifier, int] = {}
 
     @staticmethod
     def invalidateShaderCaches():
@@ -46,10 +48,10 @@ class Material:
         return processedSource
 
     def __init__(self, vertexShaderPath: Path, fragmentShaderPath: Path = None, capturedVaryings: tuple[str] = ()):
+        super().__init__()
         self.vertexShaderPath = vertexShaderPath
         self.fragmentShaderPath = fragmentShaderPath
         self.capturedVaryings = capturedVaryings
-        self.glContext: gl.Context = None
         self.shaderProgramIdentifier = ShaderProgramIdentifier(
             self.vertexShaderPath,
             self.fragmentShaderPath,
@@ -66,7 +68,7 @@ class Material:
         Material.materials.append(self)
         
     def initialize(self):
-        self.glContext = gl.get_context()
+        super().initialize()
         cachedProgram = Material.shaderProgramCache.get(self.shaderProgramIdentifier)
         if cachedProgram is not None:
             self.program = cachedProgram
@@ -79,8 +81,22 @@ class Material:
             )
             Material.shaderProgramCache[self.shaderProgramIdentifier] = self.program
 
+        if self.shaderProgramIdentifier in Material.shaderReferences:
+            Material.shaderReferences[self.shaderProgramIdentifier] += 1
+        else:
+            Material.shaderReferences[self.shaderProgramIdentifier] = 1
+
     def setUniform(self, uniformName, value):
         self.program[uniformName].write(value)
 
     def use(self):
         pass
+
+    def release(self):
+        super().release()
+        Material.shaderReferences[self.shaderProgramIdentifier] -= 1
+
+        if Material.shaderReferences[self.shaderProgramIdentifier] == 0:
+            Material.shaderReferences.pop(self.shaderProgramIdentifier)
+            Material.shaderProgramCache.pop(self.shaderProgramIdentifier)
+            self.program.release()

@@ -68,14 +68,14 @@ class App:
         self.viewport.repaint()
 
     def selectedSolarCollectorChanged(self):
-        self.viewport.scene.roofSolarCollector.object.isVisible = False
-        self.viewport.scene.shedSolarCollector.object.isVisible = False
+        self.viewport.scene.roofSolarCollector.isVisible = False
+        self.viewport.scene.shedSolarCollector.isVisible = False
 
         match self.solarCollectorLocationSelector.selector.currentData():
             case SolarCollectorLocation.OnRoof:
-                self.viewport.scene.roofSolarCollector.object.isVisible = True
+                self.viewport.scene.roofSolarCollector.isVisible = True
             case SolarCollectorLocation.OnShed:
-                self.viewport.scene.shedSolarCollector.object.isVisible = True
+                self.viewport.scene.shedSolarCollector.isVisible = True
 
         self.viewport.repaint()
 

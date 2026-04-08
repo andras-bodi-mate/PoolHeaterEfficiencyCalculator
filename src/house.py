@@ -2,20 +2,21 @@ from pyglm import glm
 
 from transform import Transform
 from core import Core
+from object import Object
 from gltfLoader import GltfLoader
+from renderPass import RenderPass
 
-class House:
+class House(Object):
     def __init__(self):
-        gltfLoader = GltfLoader(Core.getPath("res/models/house.gltf"))
-        rootObjects = gltfLoader.loadRootObjects()
-        self.object = rootObjects[0]
+        loaded = GltfLoader.loadFirstObject(Core.getPath("res/models/house.gltf"))
+        super().__init__(loaded.mesh, loaded.transform, loaded.children, loaded.name)
         self.transform = Transform(glm.vec3(0.0, 0.0, 0.0))
 
     def initialize(self):
-        self.object.initialize()
+        super().initialize()
 
-    def render(self):
-        self.object.render([self.transform.getMatrix()])
+    def render(self, renderPass: RenderPass, ancestorTransforms: list[glm.mat4x4] = None):
+        super().render(renderPass, ancestorTransforms)
 
     def release(self):
-        self.object.release()
+        super().release()

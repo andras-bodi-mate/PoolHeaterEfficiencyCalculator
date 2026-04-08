@@ -1,12 +1,16 @@
+import moderngl as gl
+
 from material import Material
 from scene import Scene
+from renderPass import RenderPass
+from graphicsResource import GraphicsResource
 
-class Renderer:
+class Renderer(GraphicsResource):
     def __init__(self):
-        pass
+        super().__init__()
 
     def initialize(self):
-        pass
+        super().initialize()
 
     def render(self, scene: Scene):
         Material.setUniformOnMaterials("u_perspectiveProjection", scene.activeCamera.projectionMatrix)
@@ -14,8 +18,17 @@ class Renderer:
         Material.setUniformOnMaterials("u_sunPosition", scene.sunLight.position)
         Material.setUniformOnMaterials("u_sunlightTransmission", scene.sunLight.sunlightTransmission)
 
+        # for light in scene.lights:
+        #     prevViewport = self.glContext.viewport
+        #     self.glContext.viewport = (0, 0, light.framebufferResolution, light.framebufferResolution)
+
+        #     for object in scene.rootObjects:
+        #         object.render(RenderPass.ShadowPass)
+
+        #     self.glContext.viewport = prevViewport
+
         for object in scene.rootObjects:
-            object.render()
+            object.render(RenderPass.ForwardPass)
 
     def release(self):
-        pass
+        super().release()

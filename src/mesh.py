@@ -1,4 +1,5 @@
 from meshPrimitive import MeshPrimitive
+from renderPass import RenderPass
 
 class Mesh:
     def __init__(self, primitives: list[MeshPrimitive]):
@@ -8,9 +9,9 @@ class Mesh:
         for primitive in self.primitives:
             primitive.initialize()
 
-    def render(self):
+    def render(self, renderPass: RenderPass):
         for primitive in self.primitives:
-            primitive.render()
+            primitive.render(renderPass)
 
     def release(self):
         for primitive in self.primitives:

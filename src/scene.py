@@ -2,6 +2,7 @@ from typing import Optional
 
 import moderngl as gl
 
+from graphicsResource import GraphicsResource
 from camera import Camera
 from perspectiveCamera import PerspectiveCamera
 from orthographicCamera import OrthographicCamera
@@ -10,9 +11,9 @@ from solarCollector import SolarCollector
 from light import Light
 from sunLight import SunLight
 
-class Scene:
+class Scene(GraphicsResource):
     def __init__(self):
-        self.glContext: gl.Context = None
+        super().__init__()
 
         self.rootObjects: list[Object] = []
         self.cameras: list[Camera] = []
@@ -27,14 +28,15 @@ class Scene:
         self.shedSolarCollector: Optional[SolarCollector] = None
 
     def initialize(self):
-        self.glContext = gl.get_context()
+        super().initialize()
         for object in self.rootObjects:
             object.initialize()
         for light in self.lights:
             light.initialize()
 
     def release(self):
+        super().release()
         for object in self.rootObjects:
             object.release()
         for light in self.lights:
-            light.initialize()
+            light.release()

@@ -90,6 +90,11 @@ class GltfLoader:
     @staticmethod
     def createArrayFromBytes(buffer: bytes, accessor: GltfAccessor):
         return np.frombuffer(buffer, dtype = GltfLoader.componentTypeMapping[accessor.componentType])
+    
+    @staticmethod
+    def loadFirstObject(path: Path):
+        gltfLoader = GltfLoader(path)
+        return gltfLoader.loadRootObjects()[0]
 
     def __init__(self, path: Path):
         self.gltf = GLTF2().load(path)

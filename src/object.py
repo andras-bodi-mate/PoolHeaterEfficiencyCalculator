@@ -5,9 +5,12 @@ from pyglm import glm
 from mesh import Mesh
 from transform import Transform
 from material import Material
+from graphicsResource import GraphicsResource
+from renderPass import RenderPass
 
-class Object:
+class Object(GraphicsResource):
     def __init__(self, mesh: Mesh, transform: Transform, children: list["Object"] = None, name = None):
+        super().__init__()
         self.mesh = mesh
         self.transform = transform
         self.children: list["Object"] = children if children else []
@@ -15,11 +18,12 @@ class Object:
         self.isVisible = True
 
     def initialize(self):
+        super().initialize()
         self.mesh.initialize()
         for child in self.children:
             child.initialize()
 
-    def render(self, ancestorTransforms: list[glm.mat4x4] = None):
+    def render(self, renderPass: RenderPass, ancestorTransforms: list[glm.mat4x4] = None):
         if not self.isVisible:
             return
 
@@ -29,9 +33,10 @@ class Object:
         normalTransform = glm.transpose(glm.inverse(glm.mat3(finalTransform)));
         Material.setUniformOnMaterials("u_modelTransform", finalTransform)
         Material.setUniformOnMaterials("u_modelNormalTransform", normalTransform)
-        self.mesh.render()
+
+        self.mesh.render(renderPass)
         for child in self.children:
-            child.render(ancestorTransforms)
+            child.render(renderPass, ancestorTransforms)
 
     def release(self):
         self.mesh.release()

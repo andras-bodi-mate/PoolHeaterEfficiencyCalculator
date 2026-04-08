@@ -10,6 +10,7 @@ dependencies = [
     "pillow>=12.2.0",
     "pyglm>=2.8.3",
     "pygltflib>=1.16.5",
+    "pyopengl>=3.1.10",
     "pyqt6>=6.11.0",
     "pyqtgraph>=0.14.0",
     "sun-position-calculator>=1.0.0",
