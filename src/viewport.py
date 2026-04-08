@@ -16,6 +16,7 @@ from sunLight import SunLight
 from house import House
 from solarCollector import SolarCollector
 from renderer import Renderer
+from renderPass import RenderPassInfo
 
 class Viewport(qglw.QOpenGLWidget):
     def __init__(self):
@@ -109,7 +110,14 @@ class Viewport(qglw.QOpenGLWidget):
         self.setupContextForRender()
         self.frameBuffer.clear(blue = 1.0)
 
-        self.renderer.render(self.scene)
+        renderPassInfo = RenderPassInfo(
+            framebuffer = self.frameBuffer,
+            viewportSize = glm.uvec2(
+                self.glContext.viewport[2],
+                self.glContext.viewport[3]
+            )
+        )
+        self.renderer.render(self.scene, renderPassInfo)
 
         self.restoreContextForQt()
         painter.endNativePainting()

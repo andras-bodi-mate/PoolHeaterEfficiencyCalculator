@@ -31,8 +31,13 @@ class Object(GraphicsResource):
         ancestorTransforms = ancestorTransforms + [transform] if ancestorTransforms else [transform]
         finalTransform = reduce(lambda a, b: b * a, reversed(ancestorTransforms))
         normalTransform = glm.transpose(glm.inverse(glm.mat3(finalTransform)));
-        Material.setUniformOnMaterials("u_modelTransform", finalTransform)
-        Material.setUniformOnMaterials("u_modelNormalTransform", normalTransform)
+
+        match renderPass:
+            case RenderPass.ShadowPass:
+                Material.setUniformOnMaterials("u_modelTransform", finalTransform)
+            case RenderPass.ForwardPass:
+                Material.setUniformOnMaterials("u_modelTransform", finalTransform)
+                Material.setUniformOnMaterials("u_modelNormalTransform", normalTransform)
 
         self.mesh.render(renderPass)
         for child in self.children:

@@ -12,6 +12,7 @@ from meshPrimitive import MeshPrimitive
 from mesh import Mesh
 from material import Material
 from object import Object
+from renderPass import RenderPass
 
 class GltfLoader:
     magnificationFilterMapping = {
@@ -105,7 +106,14 @@ class GltfLoader:
 
         self.mainGltfScene: GltfScene = self.gltf.scenes[self.gltf.scene]
 
-        self.defaultMaterial = Material(Core.getPath("shaders/vertexShader.glsl"), Core.getPath("shaders/fragmentShader.glsl"))
+        self.defaultForwardPassMaterial = Material(
+            vertexShaderPath = Core.getPath("shaders/forwardPassVertexShader.glsl"),
+            fragmentShaderPath = Core.getPath("shaders/forwardPassFragmentShader.glsl")
+        )
+        self.defaultShadowPassMaterial = Material(
+            vertexShaderPath = Core.getPath("shaders/shadowPassVertexShader.glsl"),
+            fragmentShaderPath = Core.getPath("shaders/shadowPassFragmentShader.glsl")
+        )
 
     def loadPrimitive(self, gltfPrimitive: GltfPrimitive):
         positionAccessor: GltfAccessor = self.gltf.accessors[gltfPrimitive.attributes.POSITION]
@@ -132,9 +140,13 @@ class GltfLoader:
         #tangents = np.asarray(GltfLoader.createArrayFromBytes(tangentDataBytes, tangentAccessor), dtype = np.float32)
         indices = np.asarray(GltfLoader.createArrayFromBytes(indexDataBytes, indexAccessor), dtype = np.uint32)
 
-        material = self.defaultMaterial # self.materials[gltfPrimitive.material] if gltfPrimitive.material else self.defaultMaterial
+        # material = self.materials[gltfPrimitive.material] if gltfPrimitive.material else self.defaultMaterial
+        materials = {
+            RenderPass.ForwardPass: self.defaultForwardPassMaterial,
+            RenderPass.ShadowPass: self.defaultShadowPassMaterial
+        }
 
-        return MeshPrimitive(vertices, normals, uvs, indices, material)
+        return MeshPrimitive(vertices, normals, uvs, indices, materials)
 
     def loadMesh(self, gltfMesh: GltfMesh):
         primitives = [self.loadPrimitive(primitive) for primitive in gltfMesh.primitives]
