@@ -19,8 +19,8 @@ class Renderer(GraphicsResource):
         super().initialize()
 
     def useCamera(self, camera: Camera):
-        Material.setUniformOnMaterials("u_perspectiveProjection", camera.projectionMatrix)
-        Material.setUniformOnMaterials("u_cameraProjection", camera.viewMatrix)
+        Material.setUniformOnMaterials("u_projectionTransform", camera.projectionMatrix)
+        Material.setUniformOnMaterials("u_viewTransform", camera.viewMatrix)
 
     def shadowPass(self, scene: Scene):
         for light in scene.lights:
@@ -41,6 +41,10 @@ class Renderer(GraphicsResource):
                     object.render(RenderPass.ShadowPass)
 
     def forwardPass(self, scene: Scene):
+        Material.setUniformOnMaterials("u_lightSpaceMatrix", scene.shadowCamera.projectionMatrix * scene.shadowCamera.viewMatrix)
+        Material.setUniformOnMaterials("s_shadowMap", glm.uint32(0))
+        scene.sunLight.shadowMap.use(0)
+
         for object in scene.rootObjects:
             object.render(RenderPass.ForwardPass)
 
