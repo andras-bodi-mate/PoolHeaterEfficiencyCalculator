@@ -131,7 +131,7 @@ class App:
         self.sidePanel.setMinimumWidth(200)
         self.sidePanelLayout = qtw.QVBoxLayout()
 
-        self.dateSlider = Slider("Date", 0, 364)
+        self.dateSlider = Slider("Date", 0, 364, 171)
         self.dateSlider.slider.valueChanged.connect(self.dateChanged)
         self.solarCollectorLocationSelector = SolarCollectorLocationSelector([
             ("On roof", SolarCollectorLocation.OnRoof),
@@ -161,7 +161,7 @@ class App:
         self.viewportPlotSplitter.setStretchFactor(1, 1)
         self.viewportPlotSplitter.setSizes([1, 1])
 
-        self.viewportTimeSlider = Slider("Viewport time", 0, 24 * 60 - 1)
+        self.viewportTimeSlider = Slider("Viewport time", 0, 24 * 60 - 1, 14 * 60)
         self.viewportTimeSlider.slider.valueChanged.connect(self.timeChanged)
 
         self.contentPanelLayout.addWidget(self.viewportTimeSlider)

@@ -25,7 +25,7 @@ class Plot(pg.PlotWidget):
         self.curve.setData(x=xValues, y=yValues)
 
 class Slider(qtw.QWidget):
-    def __init__(self, label: str, minimum: int, maximum: int, parent = None):
+    def __init__(self, label: str, minimum: int, maximum: int, default: int = 0, parent = None):
         super().__init__(parent)
         self.setSizePolicy(
             qtw.QSizePolicy.Policy.Preferred,
@@ -35,6 +35,7 @@ class Slider(qtw.QWidget):
         self.label = qtw.QLabel(label)
         self.slider = qtw.QSlider(qtc.Qt.Orientation.Horizontal)
         self.slider.setRange(minimum, maximum)
+        self.slider.setValue(default)
         self.contentLayout.addWidget(self.label)
         self.contentLayout.addWidget(self.slider)
         self.setLayout(self.contentLayout)
