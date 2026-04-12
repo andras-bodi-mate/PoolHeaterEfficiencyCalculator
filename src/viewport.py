@@ -16,7 +16,7 @@ from sunLight import SunLight
 from house import House
 from solarCollector import SolarCollector
 from renderer import Renderer
-from renderPass import RenderPassInfo
+from renderPass import RenderPass, RenderPassInfo
 
 class Viewport(qglw.QOpenGLWidget):
     def __init__(self):
@@ -41,6 +41,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.prevMousePos: glm.vec2 = None
         self.aspectRatio = 1.0
         self.hasCleanedUp = True
+        self.size: glm.uvec2 = None
 
         self.scene = Scene()
         self.scene.rootObjects.append(House())
@@ -117,10 +118,7 @@ class Viewport(qglw.QOpenGLWidget):
 
         renderPassInfo = RenderPassInfo(
             framebuffer = self.frameBuffer,
-            viewportSize = glm.uvec2(
-                self.glContext.viewport[2],
-                self.glContext.viewport[3]
-            )
+            viewportSize = self.size
         )
         self.renderer.render(self.scene, renderPassInfo)
 
@@ -139,7 +137,8 @@ class Viewport(qglw.QOpenGLWidget):
     def resizeGL(self, w, h):
         super().resizeGL(w, h)
         devicePixelRatio = self.devicePixelRatioF()
-        self.glContext.viewport = (0, 0, int(w * devicePixelRatio), int(h * devicePixelRatio))
+        self.size = glm.uvec2(int(w * devicePixelRatio), int(h * devicePixelRatio))
+        self.glContext.viewport = (0, 0, self.size.x, self.size.y)
         self.aspectRatio = self.width() / self.height()
 
         for camera in self.scene.cameras:
@@ -187,3 +186,38 @@ class Viewport(qglw.QOpenGLWidget):
         else:
             self.scene.activeCamera = self.scene.userCamera
         self.repaint()
+
+    def querySolarPanelSamples(self):
+        self.scene.sunLight.framebuffer.use()
+        self.glContext.viewport = (
+            0, 0,
+            self.scene.sunLight.framebufferResolution,
+            self.scene.sunLight.framebufferResolution
+        )
+        self.scene.sunLight.framebuffer.clear(depth = 1.0)
+
+        for object in self.scene.rootObjects:
+            if isinstance(object, SolarCollector) and object.isVisible:
+                selectedCollector = object
+                break
+
+        for object in self.scene.rootObjects:
+            if object is selectedCollector:
+                continue
+
+            object.render(RenderPass.ShadowPass)
+
+        query = self.glContext.query(samples = True)
+
+        with query:
+            selectedCollector.render(RenderPass.ShadowPass)
+
+        passedSamples = query.samples
+
+        self.frameBuffer.use()
+        self.glContext.viewport = (
+            0, 0,
+            self.size.x,
+            self.size.y
+        )
+        return passedSamples

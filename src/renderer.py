@@ -22,11 +22,7 @@ class Renderer(GraphicsResource):
         Material.setUniformOnMaterials("u_perspectiveProjection", camera.projectionMatrix)
         Material.setUniformOnMaterials("u_cameraProjection", camera.viewMatrix)
 
-    def render(self, scene: Scene, renderPassInfo: RenderPassInfo):
-        Material.setUniformOnMaterials("u_sunPosition", scene.sunLight.position)
-        Material.setUniformOnMaterials("u_sunlightTransmission", scene.sunLight.sunlightTransmission)
-
-        self.useCamera(scene.shadowCamera)
+    def shadowPass(self, scene: Scene):
         for light in scene.lights:
             if isinstance(light, SunLight):
                 light.framebuffer.use()
@@ -43,20 +39,24 @@ class Renderer(GraphicsResource):
 
                     Material.setUniformOnMaterials("u_objectId", glm.uint32(objectId))
                     object.render(RenderPass.ShadowPass)
-                objectTypeMapBytes = light.framebuffer.read(components = 1, dtype = "u4")
-                objectTypeMap = np.frombuffer(objectTypeMapBytes, dtype = np.uint32).reshape((light.framebufferResolution, light.framebufferResolution))
-                unique, counts = np.unique(objectTypeMap, return_counts = True)
-                unique, counts = list(unique), list(counts)
-                if 2 in unique:
-                    print(counts[unique.index(2)])
-                else:
-                    print(0)
+
+    def forwardPass(self, scene: Scene):
+        for object in scene.rootObjects:
+            object.render(RenderPass.ForwardPass)
+
+    def render(self, scene: Scene, renderPassInfo: RenderPassInfo):
+        Material.setUniformOnMaterials("u_sunPosition", scene.sunLight.position)
+        Material.setUniformOnMaterials("u_sunlightTransmission", scene.sunLight.sunlightTransmission)
+
+        if renderPassInfo.enableShadowPass:
+            self.useCamera(scene.shadowCamera)
+            self.shadowPass(scene)
 
         self.useCamera(scene.activeCamera)
         renderPassInfo.framebuffer.use()
         self.glContext.viewport = (0, 0, renderPassInfo.viewportSize.x, renderPassInfo.viewportSize.y)
-        for object in scene.rootObjects:
-            object.render(RenderPass.ForwardPass)
+        if renderPassInfo.enableForwardPass:
+            self.forwardPass(scene)
 
     def release(self):
         super().release()

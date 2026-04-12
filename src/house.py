@@ -8,7 +8,7 @@ from renderPass import RenderPass
 
 class House(Object):
     def __init__(self):
-        loaded = GltfLoader.loadFirstObject(Core.getPath("res/models/house.gltf"))
+        loaded = GltfLoader.loadFirstObject(Core.getPath("res/models/house2.gltf"))
         super().__init__(loaded.mesh, loaded.transform, loaded.children, loaded.name)
         self.transform = Transform(glm.vec3(0.0, 0.0, 0.0))
 

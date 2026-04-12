@@ -16,7 +16,7 @@ from solarCollector import SolarCollectorLocation
 class App:
     def __init__(self):
         self.dayResolution = 24 * 4
-        self.utcPlus2 = datetime.timezone(datetime.timedelta(hours=2))
+        self.utcPlus2 = datetime.timezone(datetime.timedelta(hours = 2))
         self.sunPositionCalculator = SunPositionCalculator()
         self.latitude, self.longitude = 48.117245, 20.663500
         self.areosolOpticalDepth = 0.15
@@ -29,6 +29,12 @@ class App:
         airMass = 1 / (math.sin(altitude) + 0.50572 * (altitude + 6.07995)**-1.6364)
         transmission = math.exp(-self.areosolOpticalDepth * airMass)
         return transmission
+    
+    def getSunEucledeanPosition(self, sunAltitude: float, sunAzimuth: float):
+        return -glm.euclidean(glm.vec2(sunAltitude, -sunAzimuth + glm.half_pi()))
+    
+    def getSunPolarPosition(self, time: datetime.datetime):
+        return self.sunPositionCalculator.pos(time.timestamp() * 1000, self.latitude, self.longitude)
 
     def dateChanged(self):
         numDays = self.dateSlider.slider.value()
@@ -37,27 +43,40 @@ class App:
         self.dateSlider.label.setText(f"Date: {currentDate.month:02}.{currentDate.day:02}")
 
         self.startTime = datetime.datetime.combine(currentDate, datetime.time.min, self.utcPlus2)
-        startTimeUnix = self.startTime.timestamp() * 1000
+        startTimeUnix = self.startTime.timestamp()
         endTime = self.startTime + datetime.timedelta(hours = 24)
-        endTimeUnix = endTime.timestamp() * 1000
+        endTimeUnix = endTime.timestamp()
 
         xValues = np.linspace(0, 24, self.dayResolution)
         timeValues = np.linspace(startTimeUnix, endTimeUnix, self.dayResolution)
 
-        yValues = [math.degrees(self.sunPositionCalculator.pos(unixTime, self.latitude, self.longitude).altitude) for unixTime in timeValues]
+        self.viewport.makeCurrent()
+        self.viewport.setupContextForRender()
+
+        yValues = []
+        for timeSeconds in timeValues:
+            time = datetime.datetime.fromtimestamp(float(timeSeconds))
+            sunPolarPosition = self.getSunPolarPosition(time)
+            sunEucledeanPosition = self.getSunEucledeanPosition(sunPolarPosition.altitude, sunPolarPosition.azimuth)
+
+            yValues.append(sunEucledeanPosition.x)
+
+        self.viewport.restoreContextForQt()
+        self.viewport.doneCurrent()
+
+        #yValues = [math.degrees(self.sunPositionCalculator.pos(unixTime, self.latitude, self.longitude).altitude) for unixTime in timeValues]
         self.powerPlot.update(xValues, yValues)
 
         self.timeChanged()
 
     def timeChanged(self):
         viewportTime = self.startTime + datetime.timedelta(minutes = self.viewportTimeSlider.slider.value())
-        viewportTimeUnix = viewportTime.timestamp() * 1000
-        sunPosition = self.sunPositionCalculator.pos(viewportTimeUnix, self.latitude, self.longitude)
+        sunPosition = self.getSunPolarPosition(viewportTime)
         sunlightTransmission = self.getSunlightTransmission(viewportTime)
 
         self.viewport.scene.sunLight.position = glm.vec2(sunPosition.azimuth, sunPosition.altitude)
         self.viewport.scene.sunLight.sunlightTransmission = glm.float32(sunlightTransmission)
-        self.viewport.scene.sunCamera.forward = -glm.euclidean(glm.vec2(self.viewport.scene.sunLight.position.y, -self.viewport.scene.sunLight.position.x + glm.half_pi()))
+        self.viewport.scene.sunCamera.forward = self.getSunEucledeanPosition(sunPosition.altitude, sunPosition.azimuth)
         self.viewport.scene.sunCamera.updateViewMatrix()
         self.viewport.scene.sunCamera.updateProjectionMatrix(self.viewport.width() / self.viewport.height())
         self.viewport.scene.shadowCamera.position = self.viewport.scene.sunCamera.position
