@@ -14,17 +14,29 @@ class Core:
             return Core.projectDir / path
         
     @staticmethod
-    def toVec2(qPoint: qtc.QPoint | qtc.QPointF):
-        return glm.vec2(qPoint.x(), qPoint.y())
+    def toVec2(vec: qtc.QPoint | qtc.QPointF | glm.ivec2 | glm.vec2):
+        if isinstance(vec, (qtc.QPoint, qtc.QPointF)):
+            return glm.vec2(vec.x(), vec.y())
+        else:
+            return glm.vec2(vec)
     
     @staticmethod
-    def toIVec2(qPoint: qtc.QPoint | qtc.QPointF):
-        return glm.ivec2(int(qPoint.x()), int(qPoint.y()))
+    def toIVec2(vec: qtc.QPoint | qtc.QPointF | glm.ivec2 | glm.vec2):
+        if isinstance(vec, (qtc.QPoint, qtc.QPointF)):
+            return glm.ivec2(vec.x(), vec.y())
+        else:
+            return glm.ivec2(vec)
     
     @staticmethod
-    def toQPoint(vec2: glm.vec2 | glm.ivec2):
-        return qtc.QPoint(int(vec2.x), int(vec2.y))
+    def toQPoint(vec: qtc.QPoint | qtc.QPointF | glm.ivec2 | glm.vec2):
+        if isinstance(vec, (qtc.QPoint, qtc.QPointF)):
+            return qtc.QPoint(int(vec.x()), int(vec.y()))
+        else:
+            return qtc.QPoint(int(vec.x), int(vec.y))
     
     @staticmethod
-    def toQPointF(vec2: glm.vec2 | glm.ivec2):
-        return qtc.QPointF(vec2.x, vec2.y)
+    def toQPointF(vec: qtc.QPoint | qtc.QPointF | glm.ivec2 | glm.vec2):
+        if isinstance(vec, (qtc.QPoint, qtc.QPointF)):
+            return qtc.QPointF(int(vec.x()), int(vec.y()))
+        else:
+            return qtc.QPointF(int(vec.x), int(vec.y))

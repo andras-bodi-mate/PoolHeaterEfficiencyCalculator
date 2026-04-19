@@ -12,6 +12,7 @@ from scene import Scene
 from perspectiveCamera import PerspectiveCamera
 from orthographicCamera import OrthographicCamera
 from orbitController import OrbitController
+from freeFlyController import FreeFlyController
 from sunLight import SunLight
 from house import House
 from solarCollector import SolarCollector
@@ -42,15 +43,21 @@ class Viewport(qglw.QOpenGLWidget):
         self.aspectRatio = 1.0
         self.hasCleanedUp = True
         self.size: glm.uvec2 = None
+        self.isFocused = False
+        self.pressedKeys: set[qtc.Qt.Key] = set()
+        self.keyboardInputTimer = qtc.QTimer()
+        self.keyboardInputTimer.timeout.connect(self.checkKeyboardInput)
+        self.deltaTimeTimer = qtc.QElapsedTimer()
+        self.ignoreNextMouseMove = False
 
         self.scene = Scene()
-        self.scene.rootObjects.append(House())
+        self.scene.rootObjects.append(House(Core.getPath("res/models/house2.gltf")))
         self.scene.roofSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnRoof.gltf"))
         self.scene.shedSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnShed.gltf"))
         self.scene.rootObjects.append(self.scene.roofSolarCollector)
         self.scene.rootObjects.append(self.scene.shedSolarCollector)
 
-        self.scene.userCamera = PerspectiveCamera(controller = OrbitController())
+        self.scene.userCamera = PerspectiveCamera(controller = FreeFlyController())
         self.scene.sunCamera = OrthographicCamera()
         self.scene.shadowCamera = OrthographicCamera(fixedAspectRatio = True)
         self.scene.cameras.append(self.scene.userCamera)
@@ -100,6 +107,35 @@ class Viewport(qglw.QOpenGLWidget):
         self.doneCurrent()
         self.hasCleanedUp = True
 
+    def getCenter(self):
+        return self.mapToGlobal(self.rect().center())
+
+    def grabFocus(self):
+        self.grabKeyboard()
+        self.grabMouse()
+        self.setCursor(qtc.Qt.CursorShape.BlankCursor)
+        self.setMouseTracking(True)
+        qtg.QCursor.setPos(self.getCenter())
+        refreshRate = self.screen().refreshRate() or 60.0
+        self.keyboardInputTimer.start(int(1000 / refreshRate))
+        self.deltaTimeTimer.restart()
+        self.isFocused = True
+
+    def releaseFocus(self):
+        self.releaseKeyboard()
+        self.releaseMouse()
+        self.unsetCursor()
+        self.setMouseTracking(False)
+        self.keyboardInputTimer.stop()
+        self.isFocused = False
+
+    def checkKeyboardInput(self):
+        deltaTime = self.deltaTimeTimer.restart() / 1000
+        if self.pressedKeys:
+            self.scene.activeCamera.controller.handlePressedKeys(self.pressedKeys, deltaTime)
+            self.scene.activeCamera.updateViewMatrix()
+            self.repaint()
+
     def paintGL(self):
         super().paintGL()
         if self.frameRateTimer.elapsed() > 250:
@@ -147,19 +183,35 @@ class Viewport(qglw.QOpenGLWidget):
 
     def mousePressEvent(self, event: qtg.QMouseEvent):
         super().mousePressEvent(event)
+        if self.scene.activeCamera.controller is None:
+            return
         self.prevMousePos = Core.toVec2(event.globalPosition())
+        if self.scene.activeCamera.controller.focusable:
+            self.grabFocus()
 
     def mouseMoveEvent(self, event: qtg.QMouseEvent):
         super().mouseMoveEvent(event)
         if not self.scene.activeCamera.controller:
             return
+        elif self.scene.activeCamera.controller.focusable and not self.isFocused:
+            return
+        if self.ignoreNextMouseMove:
+            self.ignoreNextMouseMove = False
+            return
         
         currentPosition = Core.toVec2(event.globalPosition())
-        mouseDelta = currentPosition - self.prevMousePos
-        self.prevMousePos = currentPosition
+        if self.scene.activeCamera.controller.focusable:
+            centerPos = Core.toVec2(self.getCenter())
+            mouseDelta = currentPosition - centerPos
+            self.ignoreNextMouseMove = True
+            qtg.QCursor.setPos(self.getCenter())
+        else:
+            mouseDelta = currentPosition - self.prevMousePos
+            self.prevMousePos = currentPosition
 
-        self.scene.activeCamera.controller.mouseDragged(mouseDelta)
+        self.scene.activeCamera.controller.mouseMoved(mouseDelta)
         self.scene.activeCamera.updateViewMatrix()
+
         self.repaint()
     
     def wheelEvent(self, event: qtg.QWheelEvent):
@@ -174,11 +226,18 @@ class Viewport(qglw.QOpenGLWidget):
 
     def keyPressEvent(self, event: qtg.QKeyEvent):
         super().keyPressEvent(event)
-        if event.isAutoRepeat():
-            return
-        
-        if event.key() == qtc.Qt.Key.Key_R and event.modifiers() & qtc.Qt.KeyboardModifier.ControlModifier:
-            pass
+        self.pressedKeys.add(event.key())
+
+        if event.key() == qtc.Qt.Key.Key_Escape:
+            self.releaseFocus()
+
+    def keyReleaseEvent(self, event: qtg.QKeyEvent):
+        super().keyReleaseEvent(event)
+        self.pressedKeys.discard(event.key())
+
+    def focusOutEvent(self, event):
+        super().focusOutEvent(event)
+        self.releaseFocus()
 
     def activeCameraChanged(self):
         if self.activeCameraCheckbox.isChecked():
@@ -186,38 +245,3 @@ class Viewport(qglw.QOpenGLWidget):
         else:
             self.scene.activeCamera = self.scene.userCamera
         self.repaint()
-
-    def querySolarPanelSamples(self):
-        self.scene.sunLight.framebuffer.use()
-        self.glContext.viewport = (
-            0, 0,
-            self.scene.sunLight.framebufferResolution,
-            self.scene.sunLight.framebufferResolution
-        )
-        self.scene.sunLight.framebuffer.clear(depth = 1.0)
-
-        for object in self.scene.rootObjects:
-            if isinstance(object, SolarCollector) and object.isVisible:
-                selectedCollector = object
-                break
-
-        for object in self.scene.rootObjects:
-            if object is selectedCollector:
-                continue
-
-            object.render(RenderPass.ShadowPass)
-
-        query = self.glContext.query(samples = True)
-
-        with query:
-            selectedCollector.render(RenderPass.ShadowPass)
-
-        passedSamples = query.samples
-
-        self.frameBuffer.use()
-        self.glContext.viewport = (
-            0, 0,
-            self.size.x,
-            self.size.y
-        )
-        return passedSamples

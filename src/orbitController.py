@@ -20,7 +20,7 @@ class OrbitController(Controller):
     def getPosition(self):
         return self.distance * (glm.quat(glm.vec3(self.pitch, self.yaw, 0)) * glm.vec3(0, 0, 1))
     
-    def mouseDragged(self, mouseDelta: glm.vec2):
+    def mouseMoved(self, mouseDelta: glm.vec2):
         self.pitch = glm.clamp(self.pitch - mouseDelta.y / 100, glm.radians(-89), glm.radians(89))
         self.yaw += -mouseDelta.x / 100
     

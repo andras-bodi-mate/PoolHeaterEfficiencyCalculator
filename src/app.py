@@ -59,7 +59,7 @@ class App:
             sunPolarPosition = self.getSunPolarPosition(time)
             sunEucledeanPosition = self.getSunEucledeanPosition(sunPolarPosition.altitude, sunPolarPosition.azimuth)
 
-            yValues.append(sunEucledeanPosition.x)
+            yValues.append(-sunEucledeanPosition.y)
 
         self.viewport.restoreContextForQt()
         self.viewport.doneCurrent()

@@ -15,6 +15,8 @@ uniform sampler2D s_shadowMap;
 
 layout (location = 0) out vec4 out_color;
 
+const vec3 sunlightColor = vec3(1.0, 0.9, 0.7);
+
 float calculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     vec3 projCoords = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -29,7 +31,7 @@ void main() {
     vec3 lightDirection = sphericalToCartesian(u_sunPosition.x, u_sunPosition.y, 1.0);
 
     vec3 ambient = vec3(0.1, 0.1, 0.2);
-    vec3 diffuse = vec3(1.0) * max(dot(v_normal, lightDirection), 0.0) * u_sunlightTransmission;
+    vec3 diffuse = sunlightColor * max(dot(v_normal, lightDirection), 0.0) * u_sunlightTransmission;
     float shadow = calculateShadow(v_lightSpaceFragPos, lightDirection);
 
     vec3 color = (ambient + (1.0 - shadow) * diffuse) * vec3(1.0);

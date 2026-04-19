@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pyglm import glm
 
 from transform import Transform
@@ -7,8 +9,8 @@ from gltfLoader import GltfLoader
 from renderPass import RenderPass
 
 class House(Object):
-    def __init__(self):
-        loaded = GltfLoader.loadFirstObject(Core.getPath("res/models/house2.gltf"))
+    def __init__(self, path: Path):
+        loaded = GltfLoader.loadFirstObject(path)
         super().__init__(loaded.mesh, loaded.transform, loaded.children, loaded.name)
         self.transform = Transform(glm.vec3(0.0, 0.0, 0.0))
 
