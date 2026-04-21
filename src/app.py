@@ -10,7 +10,7 @@ from pyglm import glm
 from sun_position_calculator import SunPositionCalculator
 
 from viewport import Viewport
-from widgets import Slider, Plot, SolarCollectorLocationSelector
+from widgets import Slider, Plot, Selector
 from solarCollector import SolarCollectorLocation
 
 class App:
@@ -133,11 +133,12 @@ class App:
 
         self.dateSlider = Slider("Date", 0, 364, 171)
         self.dateSlider.slider.valueChanged.connect(self.dateChanged)
-        self.solarCollectorLocationSelector = SolarCollectorLocationSelector([
-            ("On roof", SolarCollectorLocation.OnRoof),
-            ("On shed", SolarCollectorLocation.OnShed),
-            ("Next to pool", SolarCollectorLocation.NextToPool)
-        ])
+        self.solarCollectorLocationSelector = Selector([
+                ("On roof", SolarCollectorLocation.OnRoof),
+                ("On shed", SolarCollectorLocation.OnShed),
+                ("Next to pool", SolarCollectorLocation.NextToPool)],
+                label = "Solar collector location:"
+        )
         self.solarCollectorLocationSelector.selector.currentIndexChanged.connect(self.selectedSolarCollectorChanged)
 
         self.sidePanelLayout.addWidget(self.dateSlider)

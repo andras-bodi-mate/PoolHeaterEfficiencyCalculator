@@ -11,22 +11,33 @@ from core import Core
 from scene import Scene
 from perspectiveCamera import PerspectiveCamera
 from orthographicCamera import OrthographicCamera
+from controller import Controllers
 from orbitController import OrbitController
 from freeFlyController import FreeFlyController
 from sunLight import SunLight
 from house import House
 from solarCollector import SolarCollector
 from renderer import Renderer
-from renderPass import RenderPass, RenderPassInfo
+from renderPass import RenderPassInfo
+from widgets import Selector
 
 class Viewport(qglw.QOpenGLWidget):
     def __init__(self):
         super().__init__()
 
-        self.viewportLayout = qtw.QHBoxLayout()
+        self.viewportLayout = qtw.QVBoxLayout()
         self.activeCameraCheckbox = qtw.QCheckBox("Switch to sun camera")
         self.activeCameraCheckbox.checkStateChanged.connect(self.activeCameraChanged)
+        self.cameraControllerSelector = Selector([
+            ("Orbit", Controllers.Orbit),
+            ("Free fly", Controllers.FreeFly)
+        ])
+        self.cameraControllerSelector.selector.currentTextChanged.connect(self.cameraControllerChanged)
         self.viewportLayout.addWidget(self.activeCameraCheckbox, alignment = qtc.Qt.AlignmentFlag.AlignTop | qtc.Qt.AlignmentFlag.AlignRight)
+        self.viewportLayout.addWidget(self.cameraControllerSelector, alignment = qtc.Qt.AlignmentFlag.AlignBottom | qtc.Qt.AlignmentFlag.AlignRight)
+
+        qtc.QTimer.singleShot(0, self.cameraControllerChanged)
+
         self.setLayout(self.viewportLayout)
 
         self.setFocusPolicy(qtc.Qt.FocusPolicy.StrongFocus)
@@ -57,7 +68,8 @@ class Viewport(qglw.QOpenGLWidget):
         self.scene.rootObjects.append(self.scene.roofSolarCollector)
         self.scene.rootObjects.append(self.scene.shedSolarCollector)
 
-        self.scene.userCamera = PerspectiveCamera(controller = FreeFlyController())
+        self.scene.userCamera = PerspectiveCamera()
+        self.scene.userCamera.position = glm.vec3(0.0, 0.0, -2000.0)
         self.scene.sunCamera = OrthographicCamera()
         self.scene.shadowCamera = OrthographicCamera(fixedAspectRatio = True)
         self.scene.cameras.append(self.scene.userCamera)
@@ -242,6 +254,17 @@ class Viewport(qglw.QOpenGLWidget):
     def activeCameraChanged(self):
         if self.activeCameraCheckbox.isChecked():
             self.scene.activeCamera = self.scene.sunCamera
+            self.cameraControllerSelector.hide()
         else:
             self.scene.activeCamera = self.scene.userCamera
+            self.cameraControllerSelector.show()
+        self.repaint()
+
+    def cameraControllerChanged(self):
+        match self.cameraControllerSelector.selector.currentData():
+            case Controllers.FreeFly:
+                self.scene.userCamera.controller = FreeFlyController.fromCamera(self.scene.userCamera)
+            case Controllers.Orbit:
+                self.scene.userCamera.controller = OrbitController.fromCamera(self.scene.userCamera)
+        self.scene.userCamera.updateViewMatrix()
         self.repaint()

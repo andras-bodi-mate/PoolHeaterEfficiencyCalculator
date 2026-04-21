@@ -40,18 +40,19 @@ class Slider(qtw.QWidget):
         self.contentLayout.addWidget(self.slider)
         self.setLayout(self.contentLayout)
 
-class SolarCollectorLocationSelector(qtw.QWidget):
-    def __init__(self, items: list[tuple[str, SolarCollectorLocation]], parent = None):
+class Selector(qtw.QWidget):
+    def __init__(self, items: list[tuple[str, int]], label: str = None, parent = None):
         super().__init__(parent)
-
         self.contentLayout = qtw.QVBoxLayout()
 
-        self.label = qtw.QLabel("Solar collector location:")
+        if label is not None:
+            self.label = qtw.QLabel(label)
 
         self.selector = qtw.QComboBox()
         for text, value in items:
             self.selector.addItem(text, value)
 
-        self.contentLayout.addWidget(self.label)
+        if label is not None:
+            self.contentLayout.addWidget(self.label)
         self.contentLayout.addWidget(self.selector)
         self.setLayout(self.contentLayout)
