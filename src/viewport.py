@@ -56,10 +56,13 @@ class Viewport(qglw.QOpenGLWidget):
         self.size: glm.uvec2 = None
         self.isFocused = False
         self.pressedKeys: set[qtc.Qt.Key] = set()
-        self.keyboardInputTimer = qtc.QTimer()
-        self.keyboardInputTimer.timeout.connect(self.checkKeyboardInput)
+        self.pendingMouseDelta = glm.vec2(0.0, 0.0)
+        self.inputTimer = qtc.QTimer()
+        self.inputTimer.timeout.connect(self.checkInput)
         self.deltaTimeTimer = qtc.QElapsedTimer()
-        self.ignoreNextMouseMove = False
+        self.inputRefreshRate = self.screen().refreshRate() or 60.0
+        self.inputTimer.start(int(1000 / self.inputRefreshRate))
+        self.deltaTimeTimer.start()
 
         self.scene = Scene()
         self.scene.rootObjects.append(House(Core.getPath("res/models/house2.gltf")))
@@ -84,6 +87,7 @@ class Viewport(qglw.QOpenGLWidget):
 
     def setupContextForRender(self):
         self.glContext.enable(gl.DEPTH_TEST)
+        self.glContext.enable(gl.CULL_FACE)
 
     def restoreContextForQt(self):
         framebufferObject = self.defaultFramebufferObject()
@@ -128,9 +132,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.setCursor(qtc.Qt.CursorShape.BlankCursor)
         self.setMouseTracking(True)
         qtg.QCursor.setPos(self.getCenter())
-        refreshRate = self.screen().refreshRate() or 60.0
-        self.keyboardInputTimer.start(int(1000 / refreshRate))
-        self.deltaTimeTimer.restart()
+        self.pressedKeys.clear()
         self.isFocused = True
 
     def releaseFocus(self):
@@ -138,13 +140,23 @@ class Viewport(qglw.QOpenGLWidget):
         self.releaseMouse()
         self.unsetCursor()
         self.setMouseTracking(False)
-        self.keyboardInputTimer.stop()
         self.isFocused = False
 
-    def checkKeyboardInput(self):
+    def checkInput(self):
         deltaTime = self.deltaTimeTimer.restart() / 1000
-        if self.pressedKeys:
-            self.scene.activeCamera.controller.handlePressedKeys(self.pressedKeys, deltaTime)
+
+        if self.scene.activeCamera.controller is None:
+            return
+
+        wereKeysPressed = len(self.pressedKeys) != 0 and self.isFocused
+        wasMouseMoved = glm.any(glm.epsilonNotEqual(self.pendingMouseDelta, glm.vec2(0.0), glm.epsilon()))
+        if wereKeysPressed or wasMouseMoved:
+            if wereKeysPressed:
+                self.scene.activeCamera.controller.handlePressedKeys(self.pressedKeys, deltaTime)
+            if wasMouseMoved:
+                self.scene.activeCamera.controller.mouseMoved(self.pendingMouseDelta, deltaTime)
+                self.pendingMouseDelta = glm.vec2(0.0)
+
             self.scene.activeCamera.updateViewMatrix()
             self.repaint()
 
@@ -207,24 +219,17 @@ class Viewport(qglw.QOpenGLWidget):
             return
         elif self.scene.activeCamera.controller.focusable and not self.isFocused:
             return
-        if self.ignoreNextMouseMove:
-            self.ignoreNextMouseMove = False
-            return
         
         currentPosition = Core.toVec2(event.globalPosition())
-        if self.scene.activeCamera.controller.focusable:
+        if self.isFocused:
             centerPos = Core.toVec2(self.getCenter())
             mouseDelta = currentPosition - centerPos
-            self.ignoreNextMouseMove = True
             qtg.QCursor.setPos(self.getCenter())
         else:
             mouseDelta = currentPosition - self.prevMousePos
             self.prevMousePos = currentPosition
 
-        self.scene.activeCamera.controller.mouseMoved(mouseDelta)
-        self.scene.activeCamera.updateViewMatrix()
-
-        self.repaint()
+        self.pendingMouseDelta += mouseDelta
     
     def wheelEvent(self, event: qtg.QWheelEvent):
         super().wheelEvent(event)

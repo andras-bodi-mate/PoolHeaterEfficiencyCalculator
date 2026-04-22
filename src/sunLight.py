@@ -8,7 +8,7 @@ class SunLight(Light):
         super().__init__()
         self.position: glm.vec2 = glm.vec2(0)
         self.sunlightTransmission: float = glm.float32(0)
-        self.framebufferResolution = 2048
+        self.framebufferResolution = 4096
         self.framebuffer: gl.Framebuffer = None
         self.shadowMap: gl.Texture = None
 

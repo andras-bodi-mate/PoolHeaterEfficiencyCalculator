@@ -14,10 +14,10 @@ class OrbitController(Controller):
 
     def __init__(self):
         super().__init__()
-        self.pitch = -0.4
+        self.pitch = 0.0
         self.yaw = 0.0
-        self.distance = 10
-        self.turnSensitivity = 0.005
+        self.distance = 0.0
+        self.turnSensitivity = 0.3
         self.zoomSensitivity = 0.005
 
     def update(self, camera: Camera):
@@ -28,9 +28,10 @@ class OrbitController(Controller):
     def getPosition(self):
         return self.distance * glm.euclidean(glm.vec2(self.pitch, self.yaw))
     
-    def mouseMoved(self, mouseDelta: glm.vec2):
-        self.pitch = glm.clamp(self.pitch + mouseDelta.y / 100, glm.radians(-89), glm.radians(89))
-        self.yaw -= mouseDelta.x / 100
+    def mouseMoved(self, mouseDelta: glm.vec2, deltaTime: float):
+        delta = self.turnSensitivity * deltaTime
+        self.pitch = glm.clamp(self.pitch + mouseDelta.y * delta, glm.radians(-89), glm.radians(89))
+        self.yaw -= mouseDelta.x * delta
     
     def wheelScrolled(self, angleDelta: float):
         self.distance *= (1 - self.zoomSensitivity) ** angleDelta

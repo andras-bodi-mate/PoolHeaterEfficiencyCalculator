@@ -19,7 +19,7 @@ class FreeFlyController(Controller):
         self.yaw = 0.0
         self.up = glm.vec3(0.0, 1.0, 0.0)
         self.flySpeed = 500.0
-        self.turnSensitivity = 0.004
+        self.turnSensitivity = 0.2
 
     def getForward(self):
         return glm.euclidean(glm.vec2(self.pitch, self.yaw))
@@ -28,15 +28,20 @@ class FreeFlyController(Controller):
         camera.position = self.position
         camera.forward = self.getForward()
 
-    def mouseMoved(self, mouseDelta: glm.vec2):
-        self.yaw -= mouseDelta.x * self.turnSensitivity
-        self.pitch = glm.clamp(self.pitch - mouseDelta.y * self.turnSensitivity, glm.radians(-89), glm.radians(89))
+    def mouseMoved(self, mouseDelta: glm.vec2, deltaTime: float):
+        delta = self.turnSensitivity * deltaTime
+        self.yaw -= mouseDelta.x * delta
+        self.pitch = glm.clamp(self.pitch - mouseDelta.y * delta, glm.radians(-89), glm.radians(89))
 
     def handlePressedKeys(self, pressedKeys: set[qtc.Qt.Key], deltaTime: float):
+        delta = self.flySpeed * deltaTime
+        if qtc.Qt.Key.Key_Shift in pressedKeys:
+            delta *= 2 
+
         forward = self.getForward()
-        deltaForward = forward * self.flySpeed * deltaTime
-        deltaRight = glm.normalize(glm.cross(forward, self.up)) * self.flySpeed * deltaTime
-        deltaUp = self.up * self.flySpeed * deltaTime
+        deltaForward = forward * delta
+        deltaRight = glm.normalize(glm.cross(forward, self.up)) * delta
+        deltaUp = self.up * delta
 
         if qtc.Qt.Key.Key_W in pressedKeys:
             self.position += deltaForward

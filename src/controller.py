@@ -21,7 +21,7 @@ class Controller(ABC):
     def mouseReleased(self, mousePos: glm.vec2):
         pass
 
-    def mouseMoved(self, mouseDelta: glm.vec2):
+    def mouseMoved(self, mouseDelta: glm.vec2, deltaTime: float):
         pass
 
     def wheelScrolled(self, angleDelta: float):

@@ -16,14 +16,25 @@ uniform sampler2D s_shadowMap;
 layout (location = 0) out vec4 out_color;
 
 const vec3 sunlightColor = vec3(1.0, 0.9, 0.7);
+const float shadowDepthBias = 0.0005;
+const int shadowBlurRadius = 1;
+const int shadowBlurDiameter = shadowBlurRadius * 2 + 1;
 
 float calculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection) {
     vec3 projCoords = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
     projCoords = projCoords * 0.5 + 0.5;
-    float closestDepth = texture(s_shadowMap, projCoords.xy).r;
-    float currentDepth = projCoords.z;
-    float bias = 0.0005;  
-    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+    vec2 shadowMapTexelSize = 1.0 / textureSize(s_shadowMap, 0);
+
+    float shadow = 0.0;
+    for (int x = -shadowBlurRadius; x <= shadowBlurRadius; x++) {
+        for (int y = -shadowBlurRadius; y <= shadowBlurRadius; y++) {
+            float closestDepth = texture(s_shadowMap, projCoords.xy + vec2(x, y) * shadowMapTexelSize).r;
+            float currentDepth = projCoords.z;
+            
+            shadow += currentDepth - shadowDepthBias > closestDepth  ? 1.0 : 0.0;
+        }
+    }
+    shadow /= shadowBlurDiameter * shadowBlurDiameter + 1;
     return shadow;
 }
 
