@@ -1,3 +1,5 @@
+const float doublePi = 6.2831853;
+
 float remap(float val, float originalStart, float originalEnd, float newStart, float newEnd) {
     return newStart + (val - originalStart) / (originalEnd - originalStart) * (newEnd - newStart);
 }
@@ -15,4 +17,13 @@ vec3 sphericalToCartesian(float azimuth, float altitude, float radius) {
         radius * sin(altitude),
         radius * ca * sin(azimuth)
     );
+}
+
+float rand(vec2 coord) {
+    return fract(sin(dot(coord, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+mat2 rotationMatrix(float angle) {
+    return mat2(cos(angle), -sin(angle),
+                sin(angle),  cos(angle));
 }
