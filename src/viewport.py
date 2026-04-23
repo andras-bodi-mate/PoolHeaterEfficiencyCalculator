@@ -1,3 +1,5 @@
+from collections import deque
+
 from PyQt6 import QtCore as qtc
 from PyQt6 import QtGui as qtg
 from PyQt6 import QtWidgets as qtw
@@ -19,13 +21,13 @@ from house import House
 from solarCollector import SolarCollector
 from renderer import Renderer
 from renderPass import RenderPassInfo
-from widgets import Selector
+from widgets import Selector, Plot
 
 class Viewport(qglw.QOpenGLWidget):
     def __init__(self):
         super().__init__()
 
-        self.viewportLayout = qtw.QVBoxLayout()
+        self.viewportLayout = qtw.QGridLayout()
         self.activeCameraCheckbox = qtw.QCheckBox("Switch to sun camera")
         self.activeCameraCheckbox.checkStateChanged.connect(self.activeCameraChanged)
         self.cameraControllerSelector = Selector([
@@ -33,8 +35,8 @@ class Viewport(qglw.QOpenGLWidget):
             ("Free fly", Controllers.FreeFly)
         ])
         self.cameraControllerSelector.selector.currentTextChanged.connect(self.cameraControllerChanged)
-        self.viewportLayout.addWidget(self.activeCameraCheckbox, alignment = qtc.Qt.AlignmentFlag.AlignTop | qtc.Qt.AlignmentFlag.AlignRight)
-        self.viewportLayout.addWidget(self.cameraControllerSelector, alignment = qtc.Qt.AlignmentFlag.AlignBottom | qtc.Qt.AlignmentFlag.AlignRight)
+        self.viewportLayout.addWidget(self.activeCameraCheckbox, 0, 1, alignment = qtc.Qt.AlignmentFlag.AlignTop | qtc.Qt.AlignmentFlag.AlignRight)
+        self.viewportLayout.addWidget(self.cameraControllerSelector, 1, 1, alignment = qtc.Qt.AlignmentFlag.AlignBottom | qtc.Qt.AlignmentFlag.AlignRight)
 
         qtc.QTimer.singleShot(0, self.cameraControllerChanged)
 
@@ -45,11 +47,8 @@ class Viewport(qglw.QOpenGLWidget):
     
         self.glContext: gl.Context = None
         self.frameBuffer: gl.Framebuffer = None
-        self.frameIndex = 0
-        self.frameRateTimer = qtc.QElapsedTimer()
-        self.frameRateTimer.start()
-        self.framesSinceLastFpsUpdate = 0
-        self.frameRate = 0
+        self.renderTimes = deque(maxlen = 100)
+        self.renderTimeUpdateTimer = qtc.QTimer()
         self.prevMousePos: glm.vec2 = None
         self.aspectRatio = 1.0
         self.hasCleanedUp = True
@@ -144,7 +143,6 @@ class Viewport(qglw.QOpenGLWidget):
 
     def checkInput(self):
         deltaTime = self.deltaTimeTimer.restart() / 1000
-
         if self.scene.activeCamera.controller is None:
             return
 
@@ -161,11 +159,7 @@ class Viewport(qglw.QOpenGLWidget):
             self.repaint()
 
     def paintGL(self):
-        super().paintGL()
-        if self.frameRateTimer.elapsed() > 250:
-            self.frameRate = self.framesSinceLastFpsUpdate / self.frameRateTimer.restart() * 1000
-            self.framesSinceLastFpsUpdate = 0
-            
+        super().paintGL()    
         painter = qtg.QPainter(self)
 
         painter.beginNativePainting()
@@ -180,19 +174,19 @@ class Viewport(qglw.QOpenGLWidget):
             framebuffer = self.frameBuffer,
             viewportSize = self.size
         )
-        self.renderer.render(self.scene, renderPassInfo)
+        renderTime = self.renderer.render(self.scene, renderPassInfo)
+        self.renderTimes.append(renderTime / 1_000_000)
 
         self.restoreContextForQt()
         painter.endNativePainting()
 
         painter.setPen(qtg.QColor(255, 255, 255))
         painter.setFont(qtg.QFont("Consolas", 10))
-        painter.drawText(qtc.QPoint(5, 15), f"FPS: {self.frameRate:.2f}")
+        painter.drawText(qtc.QPoint(5, 15), f"{(renderTime / 1_000_000):.2f} ms")
+
+        #painter.drawLines()
 
         painter.end()
-
-        self.frameIndex += 1
-        self.framesSinceLastFpsUpdate += 1
 
     def resizeGL(self, w, h):
         super().resizeGL(w, h)

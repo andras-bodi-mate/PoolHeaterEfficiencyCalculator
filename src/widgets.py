@@ -4,25 +4,25 @@ import PyQt6.QtWidgets as qtw
 import pyqtgraph as pg
 import numpy as np
 
-from solarCollector import SolarCollectorLocation
-
 class Plot(pg.PlotWidget):
-    def __init__(self, title, lineColor, areaUnderCurveColor=None):
-        super().__init__(title=title)
+    def __init__(self, lineColor, title = None, areaUnderCurveColor = None, showXAxis = True, showYAxis = True, showXValues = True, showYValues = True):
+        super().__init__(title = title)
+        self.plotItem.showGrid(x = showXAxis, y = showYAxis)
+        if not showXValues:
+            self.plotItem.getAxis("bottom").setStyle(showValues = False, tickLength = 0)
+        if not showYValues:
+            self.plotItem.getAxis("left").setStyle(showValues = False, tickLength = 0)
 
-        self.plotItem.showGrid(y=True)
-
-        # filled area (drawn underneath)
-        self.fillCurve = self.plotItem.plot(pen = None, fillLevel = 0, brush = areaUnderCurveColor)
-
-        # main line (drawn on top)
+        self.fillCurve = self.plotItem.plot(pen = None, fillLevel = 0, brush = areaUnderCurveColor) if areaUnderCurveColor else None
         self.curve = self.plotItem.plot(pen = pg.mkPen(lineColor, width = 2))
 
-    def update(self, xValues, yValues):
-        positiveY = np.maximum(yValues, 0)
-
-        self.fillCurve.setData(x=xValues, y=positiveY)
-        self.curve.setData(x=xValues, y=yValues)
+    def update(self, yValues, xValues = None):
+        if xValues is None:
+            xValues = list(range(len(yValues)))
+        if self.fillCurve:
+            positiveY = np.maximum(yValues, 0)
+            self.fillCurve.setData(x = xValues, y = positiveY)
+        self.curve.setData(x = xValues, y = yValues)
 
 class Slider(qtw.QWidget):
     def __init__(self, label: str, minimum: int, maximum: int, default: int = 0, parent = None):

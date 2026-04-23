@@ -52,15 +52,19 @@ class Renderer(GraphicsResource):
         Material.setUniformOnMaterials("u_sunPosition", scene.sunLight.position)
         Material.setUniformOnMaterials("u_sunlightTransmission", scene.sunLight.sunlightTransmission)
 
-        if renderPassInfo.enableShadowPass:
-            self.useCamera(scene.shadowCamera)
-            self.shadowPass(scene)
+        query = self.glContext.query(time = True)
+        with query:
+            if renderPassInfo.enableShadowPass:
+                self.useCamera(scene.shadowCamera)
+                self.shadowPass(scene)
 
-        self.useCamera(scene.activeCamera)
-        renderPassInfo.framebuffer.use()
-        self.glContext.viewport = (0, 0, renderPassInfo.viewportSize.x, renderPassInfo.viewportSize.y)
-        if renderPassInfo.enableForwardPass:
-            self.forwardPass(scene)
+            self.useCamera(scene.activeCamera)
+            renderPassInfo.framebuffer.use()
+            self.glContext.viewport = (0, 0, renderPassInfo.viewportSize.x, renderPassInfo.viewportSize.y)
+            if renderPassInfo.enableForwardPass:
+                self.forwardPass(scene)
+        
+        return query.elapsed
 
     def release(self):
         super().release()

@@ -65,7 +65,7 @@ class App:
         self.viewport.doneCurrent()
 
         #yValues = [math.degrees(self.sunPositionCalculator.pos(unixTime, self.latitude, self.longitude).altitude) for unixTime in timeValues]
-        self.powerPlot.update(xValues, yValues)
+        self.powerPlot.update(xValues = xValues, yValues = yValues)
 
         self.timeChanged()
 
@@ -153,7 +153,7 @@ class App:
         
         self.viewport = Viewport()
 
-        self.powerPlot = Plot("Power efficiency", (255, 255, 0), (255, 255, 0, 100))
+        self.powerPlot = Plot((255, 255, 0), title = "Power efficiency", areaUnderCurveColor = (255, 255, 0, 100))
         self.timeMarker = pg.InfiniteLine(pos = 0, angle = 90, pen = pg.mkPen((255, 0, 0), width = 2))
         self.powerPlot.addItem(self.timeMarker)
         self.viewportPlotSplitter.addWidget(self.viewport)
