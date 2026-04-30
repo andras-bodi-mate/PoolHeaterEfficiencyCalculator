@@ -1,4 +1,6 @@
-const float doublePi = 6.2831853;
+const float halfPi = 1.57079632679;
+const float pi = 3.14159265359;
+const float doublePi = 6.28318530718;
 
 float remap(float val, float originalStart, float originalEnd, float newStart, float newEnd) {
     return newStart + (val - originalStart) / (originalEnd - originalStart) * (newEnd - newStart);

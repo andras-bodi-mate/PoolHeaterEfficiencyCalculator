@@ -1,7 +1,5 @@
 from typing import Optional
 
-import moderngl as gl
-
 from graphicsResource import GraphicsResource
 from camera import Camera
 from perspectiveCamera import PerspectiveCamera

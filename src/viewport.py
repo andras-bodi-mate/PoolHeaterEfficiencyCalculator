@@ -19,9 +19,10 @@ from freeFlyController import FreeFlyController
 from sunLight import SunLight
 from house import House
 from solarCollector import SolarCollector
+from sky import Sky
 from renderer import Renderer
 from renderPass import RenderPassInfo
-from widgets import Selector, Plot
+from widgets import Selector
 
 class Viewport(qglw.QOpenGLWidget):
     def __init__(self):
@@ -64,7 +65,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.deltaTimeTimer.start()
 
         self.scene = Scene()
-        self.scene.rootObjects.append(House(Core.getPath("res/models/house2.gltf")))
+        self.scene.rootObjects.append(House(Core.getPath("res/models/house.gltf")))
         self.scene.roofSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnRoof.gltf"))
         self.scene.shedSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnShed.gltf"))
         self.scene.rootObjects.append(self.scene.roofSolarCollector)
@@ -184,7 +185,8 @@ class Viewport(qglw.QOpenGLWidget):
         painter.setFont(qtg.QFont("Consolas", 10))
         painter.drawText(qtc.QPoint(5, 15), f"{(renderTime / 1_000_000):.2f} ms")
 
-        #painter.drawLines()
+        lines = [qtc.QPointF(x + 65, y * 4) for x, y in zip(range(len(self.renderTimes)), self.renderTimes)]
+        painter.drawLines(lines)
 
         painter.end()
 

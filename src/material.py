@@ -31,9 +31,12 @@ class Material(GraphicsResource):
                 uniform.write(value)
 
     @staticmethod
-    def readShaderSource(path: Path, isBeingIncluded = False):
+    def readShaderSource(path: Path, isBeingIncluded = False, includes: list[Path] = None):
         if path in Material.shaderSourceCache:
             return Material.shaderSourceCache[path]
+        
+        if includes is None:
+            includes = []
     
         lines = path.read_text().splitlines(True)
         if isBeingIncluded and lines[0].startswith("#version"):
@@ -41,7 +44,18 @@ class Material(GraphicsResource):
         processedSource = ""
         for line in lines:
             if line.startswith("#include"):
-                processedSource += Material.readShaderSource(path.parent / line[9:].strip())
+                includedFileName = line[9:].strip()
+                includedPath = path.parent / includedFileName
+
+                if includedPath in includes:
+                    continue
+
+                processedSource += Material.readShaderSource(
+                    includedPath,
+                    isBeingIncluded = True,
+                    includes = includes
+                )
+                includes.append(includedPath)
             else:
                 processedSource += line
         Material.shaderSourceCache[path] = processedSource

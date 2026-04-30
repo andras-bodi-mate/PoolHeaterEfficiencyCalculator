@@ -1,6 +1,7 @@
 import PyQt6.QtCore as qtc
 import PyQt6.QtGui as qtg
 import PyQt6.QtWidgets as qtw
+import superqt as qts
 import pyqtgraph as pg
 import numpy as np
 
@@ -36,6 +37,21 @@ class Slider(qtw.QWidget):
         self.slider = qtw.QSlider(qtc.Qt.Orientation.Horizontal)
         self.slider.setRange(minimum, maximum)
         self.slider.setValue(default)
+        self.contentLayout.addWidget(self.label)
+        self.contentLayout.addWidget(self.slider)
+        self.setLayout(self.contentLayout)
+
+class RangeSlider(qtw.QWidget):
+    def __init__(self, label: str, minimum: int, maximum: int, parent = None):
+        super().__init__(parent)
+        self.setSizePolicy(
+            qtw.QSizePolicy.Policy.Preferred,
+            qtw.QSizePolicy.Policy.Fixed
+        )
+        self.contentLayout = qtw.QVBoxLayout()
+        self.label = qtw.QLabel(label)
+        self.slider = qts.QRangeSlider(qtc.Qt.Orientation.Horizontal)
+        self.slider.setRange(minimum, maximum)
         self.contentLayout.addWidget(self.label)
         self.contentLayout.addWidget(self.slider)
         self.setLayout(self.contentLayout)

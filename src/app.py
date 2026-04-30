@@ -10,7 +10,7 @@ from pyglm import glm
 from sun_position_calculator import SunPositionCalculator
 
 from viewport import Viewport
-from widgets import Slider, Plot, Selector
+from widgets import Slider, RangeSlider, Plot, Selector
 from solarCollector import SolarCollectorLocation
 
 class App:
@@ -140,9 +140,11 @@ class App:
                 label = "Solar collector location:"
         )
         self.solarCollectorLocationSelector.selector.currentIndexChanged.connect(self.selectedSolarCollectorChanged)
+        self.sunlightExposureDateInterval = RangeSlider("Date interval", 0, 365)
 
         self.sidePanelLayout.addWidget(self.dateSlider)
         self.sidePanelLayout.addWidget(self.solarCollectorLocationSelector)
+        self.sidePanelLayout.addWidget(self.sunlightExposureDateInterval)
 
         self.sidePanelLayout.addStretch()
         self.sidePanel.setLayout(self.sidePanelLayout)

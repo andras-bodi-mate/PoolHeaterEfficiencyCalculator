@@ -36,7 +36,8 @@ class MeshPrimitive:
                 self.materials[RenderPass.ForwardPass].program,
                 [
                     (self.vertexBuffer, "3f", "in_position"),
-                    (self.normalBuffer, "3f", "in_normal")
+                    (self.normalBuffer, "3f", "in_normal"),
+                    (self.uvBuffer, "2f", "in_uv")
                 ],
                 index_buffer = self.indexBuffer
             ),
