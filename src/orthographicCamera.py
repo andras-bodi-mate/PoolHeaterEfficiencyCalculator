@@ -12,10 +12,12 @@ class OrthographicCamera(Camera):
         self.updateViewMatrix()
 
     def updateProjectionMatrix(self, aspectRatio):
-        size = 1500.0
+        if self.controller is not None:
+            self.controller.update(self)
+
         self.projectionMatrix = glm.ortho(
-            -size * aspectRatio, size * aspectRatio,
-            -size, size,
+            -self.scale * aspectRatio, self.scale * aspectRatio,
+            -self.scale, self.scale,
             100.0, 10000.0
         )
     

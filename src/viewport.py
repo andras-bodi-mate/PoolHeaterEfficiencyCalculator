@@ -16,6 +16,7 @@ from orthographicCamera import OrthographicCamera
 from controller import Controllers
 from orbitController import OrbitController
 from freeFlyController import FreeFlyController
+from zoomController import ZoomController
 from sunLight import SunLight
 from house import House
 from solarCollector import SolarCollector
@@ -74,6 +75,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.scene.userCamera = PerspectiveCamera()
         self.scene.userCamera.position = glm.vec3(0.0, 0.0, -2000.0)
         self.scene.sunCamera = OrthographicCamera()
+        self.scene.sunCamera.controller = ZoomController.fromCamera(self.scene.sunCamera)
         self.scene.shadowCamera = OrthographicCamera(fixedAspectRatio = True)
         self.scene.cameras.append(self.scene.userCamera)
         self.scene.cameras.append(self.scene.sunCamera)
@@ -234,7 +236,10 @@ class Viewport(qglw.QOpenGLWidget):
 
         angleDelta = Core.toVec2(event.angleDelta()).y
         self.scene.activeCamera.controller.wheelScrolled(angleDelta)
-        self.scene.activeCamera.updateViewMatrix()
+        if isinstance(self.scene.activeCamera.controller, ZoomController):
+            self.scene.activeCamera.updateProjectionMatrix(self.aspectRatio)
+        else:
+            self.scene.activeCamera.updateViewMatrix()
         self.repaint()
 
     def keyPressEvent(self, event: qtg.QKeyEvent):

@@ -10,7 +10,7 @@ from pyglm import glm
 from sun_position_calculator import SunPositionCalculator
 
 from viewport import Viewport
-from widgets import Slider, RangeSlider, Plot, Selector
+from widgets import Slider, RangeSlider, Plot, MultiLinePlot, Selector
 from solarCollector import SolarCollectorLocation
 
 class App:
@@ -53,19 +53,19 @@ class App:
         self.viewport.makeCurrent()
         self.viewport.setupContextForRender()
 
-        yValues = []
+        azimuths = []
+        altitudes = []
         for timeSeconds in timeValues:
             time = datetime.datetime.fromtimestamp(float(timeSeconds))
             sunPolarPosition = self.getSunPolarPosition(time)
-            sunEucledeanPosition = self.getSunEucledeanPosition(sunPolarPosition.altitude, sunPolarPosition.azimuth)
 
-            yValues.append(-sunEucledeanPosition.y)
+            azimuths.append(math.degrees(sunPolarPosition.azimuth))
+            altitudes.append(math.degrees(sunPolarPosition.altitude))
 
         self.viewport.restoreContextForQt()
         self.viewport.doneCurrent()
 
-        #yValues = [math.degrees(self.sunPositionCalculator.pos(unixTime, self.latitude, self.longitude).altitude) for unixTime in timeValues]
-        self.powerPlot.update(xValues = xValues, yValues = yValues)
+        self.powerPlot.update(xValues = xValues, lineValues = (azimuths, altitudes))
 
         self.timeChanged()
 
@@ -137,7 +137,7 @@ class App:
                 ("On roof", SolarCollectorLocation.OnRoof),
                 ("On shed", SolarCollectorLocation.OnShed),
                 ("Next to pool", SolarCollectorLocation.NextToPool)],
-                label = "Solar collector location:"
+                label = "Solar collectors:"
         )
         self.solarCollectorLocationSelector.selector.currentIndexChanged.connect(self.selectedSolarCollectorChanged)
         self.sunlightExposureDateInterval = RangeSlider("Date interval", 0, 365)
@@ -155,7 +155,11 @@ class App:
         
         self.viewport = Viewport()
 
-        self.powerPlot = Plot((255, 255, 0), title = "Power efficiency", areaUnderCurveColor = (255, 255, 0, 100))
+        self.powerPlot = MultiLinePlot(
+            lineColors = ((255, 255, 0), (0, 255, 255)),
+            title = "Sun position",
+            areaUnderCurveColors = ((255, 255, 0, 100), (0, 255, 255, 100))
+        )
         self.timeMarker = pg.InfiniteLine(pos = 0, angle = 90, pen = pg.mkPen((255, 0, 0), width = 2))
         self.powerPlot.addItem(self.timeMarker)
         self.viewportPlotSplitter.addWidget(self.viewport)
