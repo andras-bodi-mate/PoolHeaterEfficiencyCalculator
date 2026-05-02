@@ -66,7 +66,8 @@ class App:
         #self.viewportPanel.viewport.restoreContextForQt()
         #self.viewportPanel.viewport.doneCurrent()
 
-        self.dataPanel.powerPlot.update(xValues = xValues, lineValues = (azimuths, altitudes))
+        self.dataPanel.positionPlot.update(xValues = xValues, lineValues = (azimuths, altitudes))
+        self.dataPanel.powerPlot.update(xValues = xValues, yValues = np.sin(np.asarray(xValues)))
 
         self.timeChanged(self.viewportPanel.timeSlider.slider.value())
 
