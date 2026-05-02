@@ -9,9 +9,10 @@ import numpy as np
 from pyglm import glm
 from sun_position_calculator import SunPositionCalculator
 
-from viewport import Viewport
-from widgets import Slider, RangeSlider, Plot, MultiLinePlot, Selector
-from solarCollector import SolarCollectorLocation
+from object import Object
+from sidePanel import SidePanel
+from dataPanel import DataPanel
+from viewportPanel import ViewportPanel
 
 class App:
     def __init__(self):
@@ -20,6 +21,7 @@ class App:
         self.sunPositionCalculator = SunPositionCalculator()
         self.latitude, self.longitude = 48.117245, 20.663500
         self.areosolOpticalDepth = 0.15
+        self.solarCollectors: list[Object]
 
     def getSunlightTransmission(self, time: datetime.datetime):
         altitude = self.sunPositionCalculator.pos(time.timestamp() * 1000, self.latitude, self.longitude).altitude
@@ -36,11 +38,10 @@ class App:
     def getSunPolarPosition(self, time: datetime.datetime):
         return self.sunPositionCalculator.pos(time.timestamp() * 1000, self.latitude, self.longitude)
 
-    def dateChanged(self):
-        numDays = self.dateSlider.slider.value()
-        currentDate = datetime.date(2026, 1, 1) + datetime.timedelta(days = numDays)
+    def dateChanged(self, days: int):
+        currentDate = datetime.date(2026, 1, 1) + datetime.timedelta(days = days)
 
-        self.dateSlider.label.setText(f"Date: {currentDate.month:02}.{currentDate.day:02}")
+        self.sidePanel.dateSlider.label.setText(f"Date: {currentDate.month:02}.{currentDate.day:02}")
 
         self.startTime = datetime.datetime.combine(currentDate, datetime.time.min, self.utcPlus2)
         startTimeUnix = self.startTime.timestamp()
@@ -50,8 +51,8 @@ class App:
         xValues = np.linspace(0, 24, self.dayResolution)
         timeValues = np.linspace(startTimeUnix, endTimeUnix, self.dayResolution)
 
-        self.viewport.makeCurrent()
-        self.viewport.setupContextForRender()
+        #self.viewportPanel.viewport.makeCurrent()
+        #self.viewportPanel.viewport.setupContextForRender()
 
         azimuths = []
         altitudes = []
@@ -62,44 +63,42 @@ class App:
             azimuths.append(math.degrees(sunPolarPosition.azimuth))
             altitudes.append(math.degrees(sunPolarPosition.altitude))
 
-        self.viewport.restoreContextForQt()
-        self.viewport.doneCurrent()
+        #self.viewportPanel.viewport.restoreContextForQt()
+        #self.viewportPanel.viewport.doneCurrent()
 
-        self.powerPlot.update(xValues = xValues, lineValues = (azimuths, altitudes))
+        self.dataPanel.powerPlot.update(xValues = xValues, lineValues = (azimuths, altitudes))
 
-        self.timeChanged()
+        self.timeChanged(self.viewportPanel.timeSlider.slider.value())
 
-    def timeChanged(self):
-        viewportTime = self.startTime + datetime.timedelta(minutes = self.viewportTimeSlider.slider.value())
+    def timeChanged(self, minutes: int):
+        viewportTime = self.startTime + datetime.timedelta(minutes = minutes)
         sunPosition = self.getSunPolarPosition(viewportTime)
         sunlightTransmission = self.getSunlightTransmission(viewportTime)
+        scene = self.viewportPanel.viewport.scene
 
-        self.viewport.scene.sunLight.position = glm.vec2(sunPosition.azimuth, sunPosition.altitude)
-        self.viewport.scene.sunLight.sunlightTransmission = glm.float32(sunlightTransmission)
-        self.viewport.scene.sunCamera.forward = self.getSunEucledeanPosition(sunPosition.altitude, sunPosition.azimuth)
-        self.viewport.scene.sunCamera.updateViewMatrix()
-        self.viewport.scene.sunCamera.updateProjectionMatrix(self.viewport.width() / self.viewport.height())
-        self.viewport.scene.shadowCamera.position = self.viewport.scene.sunCamera.position
-        self.viewport.scene.shadowCamera.forward = self.viewport.scene.sunCamera.forward
-        self.viewport.scene.shadowCamera.updateViewMatrix()
+        scene.sunLight.position = glm.vec2(sunPosition.azimuth, sunPosition.altitude)
+        scene.sunLight.sunlightTransmission = glm.float32(sunlightTransmission)
+        scene.sunCamera.forward = self.getSunEucledeanPosition(sunPosition.altitude, sunPosition.azimuth)
+        scene.sunCamera.updateViewMatrix()
+        scene.sunCamera.updateProjectionMatrix(self.viewportPanel.width() / self.viewportPanel.height())
+        scene.shadowCamera.position = scene.sunCamera.position
+        scene.shadowCamera.forward = scene.sunCamera.forward
+        scene.shadowCamera.updateViewMatrix()
 
-        self.timeMarker.setValue(glm.mix(0, 24, self.viewportTimeSlider.slider.value() / (24 * 60)))
+        self.dataPanel.timeMarker.setValue(glm.mix(0, 24, self.viewportPanel.timeSlider.slider.value() / (24 * 60)))
 
-        self.viewportTimeSlider.label.setText(f"Viewport time: {viewportTime.hour:02}:{viewportTime.minute:02}")
+        self.viewportPanel.timeSlider.label.setText(f"Viewport time: {viewportTime.hour:02}:{viewportTime.minute:02}")
 
-        self.viewport.repaint()
+        self.viewportPanel.viewport.repaint()
 
-    def selectedSolarCollectorChanged(self):
-        self.viewport.scene.roofSolarCollector.isVisible = False
-        self.viewport.scene.shedSolarCollector.isVisible = False
+    def calculateSolarCollectorPower(self):
+        self.sidePanel.powerTable.clearContents()
+        selectedSolarCollectors = self.sidePanel.solarCollectorSelector.list.getCheckedItemsData()
+        self.sidePanel.powerTable.setRowCount(len(selectedSolarCollectors))
 
-        match self.solarCollectorLocationSelector.selector.currentData():
-            case SolarCollectorLocation.OnRoof:
-                self.viewport.scene.roofSolarCollector.isVisible = True
-            case SolarCollectorLocation.OnShed:
-                self.viewport.scene.shedSolarCollector.isVisible = True
-
-        self.viewport.repaint()
+        for i, object in enumerate(selectedSolarCollectors):
+            self.sidePanel.powerTable.setItem(i, 0, qtw.QTableWidgetItem(object.name))
+            self.sidePanel.powerTable.setItem(i, 1, qtw.QTableWidgetItem("12.32 kWh"))
 
     def initializeQt(self):
         surfaceFormat = qtg.QSurfaceFormat()
@@ -118,68 +117,38 @@ class App:
         self.initializeQt()
         self.qtApp = qtw.QApplication([])
 
-        qtc.QTimer.singleShot(0, self.dateChanged)
-        qtc.QTimer.singleShot(0, self.timeChanged)
-        qtc.QTimer.singleShot(0, self.selectedSolarCollectorChanged)
-
         self.window = qtw.QMainWindow()
         self.mainWidget = qtw.QWidget()
         self.mainLayout = qtw.QHBoxLayout()
-        self.mainLayoutSplitter = qtw.QSplitter()
+        self.contentSideSplitter = qtw.QSplitter()
 
-        self.sidePanel = qtw.QWidget()
-        self.sidePanel.setMinimumWidth(200)
-        self.sidePanelLayout = qtw.QVBoxLayout()
+        self.sidePanel = SidePanel()
 
-        self.dateSlider = Slider("Date", 0, 364, 171)
-        self.dateSlider.slider.valueChanged.connect(self.dateChanged)
-        self.solarCollectorLocationSelector = Selector([
-                ("On roof", SolarCollectorLocation.OnRoof),
-                ("On shed", SolarCollectorLocation.OnShed),
-                ("Next to pool", SolarCollectorLocation.NextToPool)],
-                label = "Solar collectors:"
-        )
-        self.solarCollectorLocationSelector.selector.currentIndexChanged.connect(self.selectedSolarCollectorChanged)
-        self.sunlightExposureDateInterval = RangeSlider("Date interval", 0, 365)
-
-        self.sidePanelLayout.addWidget(self.dateSlider)
-        self.sidePanelLayout.addWidget(self.solarCollectorLocationSelector)
-        self.sidePanelLayout.addWidget(self.sunlightExposureDateInterval)
-
-        self.sidePanelLayout.addStretch()
-        self.sidePanel.setLayout(self.sidePanelLayout)
-
-        self.contentPanel = qtw.QWidget()
-        self.contentPanelLayout = qtw.QVBoxLayout()
-        self.viewportPlotSplitter = qtw.QSplitter(qtc.Qt.Orientation.Vertical)
+        self.viewportDataSplitter = qtw.QSplitter(qtc.Qt.Orientation.Vertical)
         
-        self.viewport = Viewport()
+        self.viewportPanel = ViewportPanel()
+        self.dataPanel = DataPanel()
 
-        self.powerPlot = MultiLinePlot(
-            lineColors = ((255, 255, 0), (0, 255, 255)),
-            title = "Sun position",
-            areaUnderCurveColors = ((255, 255, 0, 100), (0, 255, 255, 100))
-        )
-        self.timeMarker = pg.InfiniteLine(pos = 0, angle = 90, pen = pg.mkPen((255, 0, 0), width = 2))
-        self.powerPlot.addItem(self.timeMarker)
-        self.viewportPlotSplitter.addWidget(self.viewport)
-        self.viewportPlotSplitter.addWidget(self.powerPlot)
-        self.viewportPlotSplitter.setStretchFactor(0, 1)
-        self.viewportPlotSplitter.setStretchFactor(1, 1)
-        self.viewportPlotSplitter.setSizes([1, 1])
+        for object in self.viewportPanel.viewport.scene.rootObjects:
+            self.sidePanel.solarCollectorSelector.list.addItem(object.name, object)
 
-        self.viewportTimeSlider = Slider("Viewport time", 0, 24 * 60 - 1, 14 * 60)
-        self.viewportTimeSlider.slider.valueChanged.connect(self.timeChanged)
+        self.sidePanel.dateChanged.connect(self.dateChanged)
+        self.sidePanel.requestedCalculation.connect(self.calculateSolarCollectorPower)
+        self.viewportPanel.timeChanged.connect(self.timeChanged)
 
-        self.contentPanelLayout.addWidget(self.viewportTimeSlider)
-        self.contentPanelLayout.addWidget(self.viewportPlotSplitter)
-        self.contentPanel.setLayout(self.contentPanelLayout)
+        self.sidePanel.dateChanged.emit(self.sidePanel.dateSlider.slider.value())
 
-        self.mainLayoutSplitter.addWidget(self.contentPanel)
-        self.mainLayoutSplitter.addWidget(self.sidePanel)
-        self.mainLayoutSplitter.setStretchFactor(0, 3)
-        self.mainLayoutSplitter.setStretchFactor(1, 1)
-        self.mainLayout.addWidget(self.mainLayoutSplitter)
+        self.viewportDataSplitter.addWidget(self.viewportPanel)
+        self.viewportDataSplitter.addWidget(self.dataPanel)
+        self.viewportDataSplitter.setStretchFactor(0, 1)
+        self.viewportDataSplitter.setStretchFactor(1, 1)
+        self.viewportDataSplitter.setSizes([1, 1])
+
+        self.contentSideSplitter.addWidget(self.viewportDataSplitter)
+        self.contentSideSplitter.addWidget(self.sidePanel)
+        self.contentSideSplitter.setStretchFactor(0, 3)
+        self.contentSideSplitter.setStretchFactor(1, 1)
+        self.mainLayout.addWidget(self.contentSideSplitter)
 
         self.mainWidget.setLayout(self.mainLayout)
         self.window.setCentralWidget(self.mainWidget)

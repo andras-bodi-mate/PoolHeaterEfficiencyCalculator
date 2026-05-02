@@ -99,8 +99,8 @@ class Selector(qtw.QWidget):
         self.setLayout(self.contentLayout)
 
 class CheckableComboBox(qtw.QComboBox):
-    def addItem(self, item):
-        super(CheckableComboBox, self).addItem(item)
+    def addItem(self, text, userData=None):
+        super().addItem(text, userData)
         item = self.model().item(self.count() - 1, 0)
         item.setFlags(qtc.Qt.ItemIsUserCheckable | qtc.Qt.ItemIsEnabled)
         item.setCheckState(qtc.Qt.Unchecked)
@@ -108,3 +108,22 @@ class CheckableComboBox(qtw.QComboBox):
     def itemChecked(self, index):
         item = self.model().item(index, 0)
         return item.checkState() == qtc.Qt.Checked
+    
+    def getCheckedItemsData(self):
+        checked = []
+        for i in range(self.count()):
+            item = self.model().item(i, 0)
+            if item.checkState() == qtc.Qt.Checked:
+                checked.append(self.itemData(i))
+        return checked
+    
+class LabeledCheckableComboBox(qtw.QWidget):
+    def __init__(self, label: str, parent = None):
+        super().__init__(parent)
+
+        layout = qtw.QVBoxLayout()
+        self.label = qtw.QLabel(label)
+        self.list = CheckableComboBox()
+        layout.addWidget(self.label)
+        layout.addWidget(self.list)
+        self.setLayout(layout)
