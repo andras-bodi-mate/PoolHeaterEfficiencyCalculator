@@ -6,6 +6,7 @@ import PyQt6.QtGui as qtg
 import PyQt6.QtWidgets as qtw
 import pyqtgraph as pg
 import numpy as np
+from numpy.typing import NDArray
 from pyglm import glm
 from sun_position_calculator import SunPositionCalculator
 
@@ -21,6 +22,8 @@ class App:
         self.sunPositionCalculator = SunPositionCalculator()
         self.latitude, self.longitude = 48.117245, 20.663500
         self.areosolOpticalDepth = 0.15
+        self.days = 0
+        self.minutes = 0
         self.solarCollectors: list[Object]
 
     def getSunlightTransmission(self, time: datetime.datetime):
@@ -37,8 +40,8 @@ class App:
     
     def getSunPolarPosition(self, time: datetime.datetime):
         return self.sunPositionCalculator.pos(time.timestamp() * 1000, self.latitude, self.longitude)
-
-    def dateChanged(self, days: int):
+    
+    def iterateOverDay(self, days: int):
         currentDate = datetime.date(2026, 1, 1) + datetime.timedelta(days = days)
 
         self.sidePanel.dateSlider.label.setText(f"Date: {currentDate.month:02}.{currentDate.day:02}")
@@ -50,9 +53,11 @@ class App:
 
         xValues = np.linspace(0, 24, self.dayResolution)
         timeValues = np.linspace(startTimeUnix, endTimeUnix, self.dayResolution)
+        return xValues, timeValues
 
-        #self.viewportPanel.viewport.makeCurrent()
-        #self.viewportPanel.viewport.setupContextForRender()
+    def dateChanged(self, days: int):
+        self.days = days
+        xValues, timeValues = self.iterateOverDay(self.days)
 
         azimuths = []
         altitudes = []
@@ -63,15 +68,12 @@ class App:
             azimuths.append(math.degrees(sunPolarPosition.azimuth))
             altitudes.append(math.degrees(sunPolarPosition.altitude))
 
-        #self.viewportPanel.viewport.restoreContextForQt()
-        #self.viewportPanel.viewport.doneCurrent()
-
         self.dataPanel.positionPlot.update(xValues = xValues, lineValues = (azimuths, altitudes))
-        self.dataPanel.powerPlot.update(xValues = xValues, yValues = np.sin(np.asarray(xValues)))
 
         self.timeChanged(self.viewportPanel.timeSlider.slider.value())
 
     def timeChanged(self, minutes: int):
+        self.minutes = minutes
         viewportTime = self.startTime + datetime.timedelta(minutes = minutes)
         sunPosition = self.getSunPolarPosition(viewportTime)
         sunlightTransmission = self.getSunlightTransmission(viewportTime)
@@ -81,25 +83,56 @@ class App:
         scene.sunLight.sunlightTransmission = glm.float32(sunlightTransmission)
         scene.sunCamera.forward = self.getSunEucledeanPosition(sunPosition.altitude, sunPosition.azimuth)
         scene.sunCamera.updateViewMatrix()
-        scene.sunCamera.updateProjectionMatrix(self.viewportPanel.width() / self.viewportPanel.height())
+        scene.sunCamera.updateProjectionMatrix(self.viewportPanel.viewport.width() / self.viewportPanel.viewport.height())
         scene.shadowCamera.position = scene.sunCamera.position
         scene.shadowCamera.forward = scene.sunCamera.forward
         scene.shadowCamera.updateViewMatrix()
 
-        self.dataPanel.timeMarker.setValue(glm.mix(0, 24, self.viewportPanel.timeSlider.slider.value() / (24 * 60)))
+        timeMarkerValue = glm.mix(0, 24, self.viewportPanel.timeSlider.slider.value() / (24 * 60))
+        self.dataPanel.timeMarker1.setValue(timeMarkerValue)
+        self.dataPanel.timeMarker2.setValue(timeMarkerValue)
 
         self.viewportPanel.timeSlider.label.setText(f"Viewport time: {viewportTime.hour:02}:{viewportTime.minute:02}")
 
         self.viewportPanel.viewport.repaint()
 
-    def calculateSolarCollectorPower(self):
+    def solarCollectorPowerCurve(self, solarCollector: Object, timeValues: NDArray[np.float64]):
+        self.viewportPanel.viewport.makeCurrent()
+        self.viewportPanel.viewport.setupContextForRender()
+
+        powerCurve = []
+        for timeValue in timeValues:
+            time = datetime.datetime.fromtimestamp(timeValue, tz = self.utcPlus2)
+            sunPolarPos = self.getSunPolarPosition(time)
+            sunEucledeanPos = self.getSunEucledeanPosition(sunPolarPos.altitude, sunPolarPos.azimuth)
+            sunlightTransmission = self.getSunlightTransmission(time)
+            numVisibleFragments = self.viewportPanel.viewport.renderer.measurementPass(self.viewportPanel.viewport.scene, solarCollector, sunlightTransmission, sunEucledeanPos, sunEucledeanPos)
+            powerCurve.append(numVisibleFragments)
+
+        self.viewportPanel.viewport.restoreContextForQt()
+        self.viewportPanel.viewport.doneCurrent()
+
+        return powerCurve
+
+    def calculateSolarCollectorPowers(self):
         self.sidePanel.powerTable.clearContents()
-        selectedSolarCollectors = self.sidePanel.solarCollectorSelector.list.getCheckedItemsData()
-        self.sidePanel.powerTable.setRowCount(len(selectedSolarCollectors))
+
+        selectedSolarCollectors: list[Object] = self.sidePanel.solarCollectorSelector.list.getCheckedItemsData()
+        numSolarCollectors = len(selectedSolarCollectors)
+        self.sidePanel.powerTable.setRowCount(numSolarCollectors)
+        self.dataPanel.powerPlot.numLines = numSolarCollectors
+
+        xValues, timeValues = self.iterateOverDay(self.days)
+        powerCurves = []
 
         for i, object in enumerate(selectedSolarCollectors):
             self.sidePanel.powerTable.setItem(i, 0, qtw.QTableWidgetItem(object.name))
-            self.sidePanel.powerTable.setItem(i, 1, qtw.QTableWidgetItem("12.32 kWh"))
+            powerCurve = self.solarCollectorPowerCurve(object, timeValues)
+            powerCurves.append(powerCurve)
+            power = np.trapezoid(np.asarray(powerCurve))
+            self.sidePanel.powerTable.setItem(i, 1, qtw.QTableWidgetItem(f"{power:.2f} Wh"))
+
+        self.dataPanel.powerPlot.update(xValues = xValues, lineValues = powerCurves, labels = [object.name for object in selectedSolarCollectors])
 
     def initializeQt(self):
         surfaceFormat = qtg.QSurfaceFormat()
@@ -134,7 +167,7 @@ class App:
             self.sidePanel.solarCollectorSelector.list.addItem(object.name, object)
 
         self.sidePanel.dateChanged.connect(self.dateChanged)
-        self.sidePanel.requestedCalculation.connect(self.calculateSolarCollectorPower)
+        self.sidePanel.requestedCalculation.connect(self.calculateSolarCollectorPowers)
         self.viewportPanel.timeChanged.connect(self.timeChanged)
 
         self.sidePanel.dateChanged.emit(self.sidePanel.dateSlider.slider.value())

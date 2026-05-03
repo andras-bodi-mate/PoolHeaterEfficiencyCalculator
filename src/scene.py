@@ -1,11 +1,8 @@
-from typing import Optional
-
 from graphicsResource import GraphicsResource
 from camera import Camera
 from perspectiveCamera import PerspectiveCamera
 from orthographicCamera import OrthographicCamera
 from object import Object
-from solarCollector import SolarCollector
 from light import Light
 from sunLight import SunLight
 
@@ -19,12 +16,11 @@ class Scene(GraphicsResource):
 
         self.activeCamera: Camera = None
 
-        self.userCamera: Optional[PerspectiveCamera] = None
-        self.sunCamera: Optional[OrthographicCamera] = None
-        self.shadowCamera: Optional[OrthographicCamera] = None
-        self.sunLight: Optional[SunLight] = None
-        self.roofSolarCollector: Optional[SolarCollector] = None
-        self.shedSolarCollector: Optional[SolarCollector] = None
+        self.userCamera: PerspectiveCamera = None
+        self.sunCamera: OrthographicCamera = None
+        self.shadowCamera: OrthographicCamera = None
+        self.measurementCamera: OrthographicCamera = None
+        self.sunLight: SunLight = None
 
     def initialize(self):
         super().initialize()

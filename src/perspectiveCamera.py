@@ -14,8 +14,8 @@ class PerspectiveCamera(Camera):
         self.projectionMatrix = glm.perspective(
             glm.radians(60.0),
             aspectRatio,
-            10.0,
-            100000.0
+            0.1,
+            1000.0
         )
 
     def updateViewMatrix(self):

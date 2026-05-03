@@ -3,6 +3,9 @@
 		"generator":"Khronos glTF Blender I/O v5.0.21",
 		"version":"2.0"
 	},
+	"extensionsUsed":[
+		"KHR_materials_specular"
+	],
 	"scene":0,
 	"scenes":[
 		{
@@ -15,12 +18,37 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Cube.005"
+			"name":"Roof Collector"
+		}
+	],
+	"materials":[
+		{
+			"doubleSided":true,
+			"extensions":{
+				"KHR_materials_specular":{
+					"specularColorFactor":[
+						0.4000000059604645,
+						0.4000000059604645,
+						0.4000000059604645
+					]
+				}
+			},
+			"name":"Steel - Satin",
+			"pbrMetallicRoughness":{
+				"baseColorFactor":[
+					0.6274510025978088,
+					0.6274510025978088,
+					0.6274510025978088,
+					1
+				],
+				"metallicFactor":0,
+				"roughnessFactor":0.5527864098548889
+			}
 		}
 	],
 	"meshes":[
 		{
-			"name":"Cube.001",
+			"name":"Body1.003",
 			"primitives":[
 				{
 					"attributes":{
@@ -28,7 +56,8 @@
 						"NORMAL":1,
 						"TEXCOORD_0":2
 					},
-					"indices":3
+					"indices":3,
+					"material":0
 				}
 			]
 		}
@@ -39,14 +68,14 @@
 			"componentType":5126,
 			"count":24,
 			"max":[
-				4.023597240447998,
-				11.740172386169434,
-				-0.8372563123703003
+				5.099999904632568,
+				10.401573181152344,
+				-1.661790975049371e-06
 			],
 			"min":[
-				-4.023599624633789,
-				9.502354621887207,
-				-4.308259963989258
+				4.399998664855957,
+				7.5648603439331055,
+				-5.311259746551514
 			],
 			"type":"VEC3"
 		},
@@ -98,7 +127,7 @@
 	"buffers":[
 		{
 			"byteLength":840,
-			"uri":"solarCollectorOnRoof.bin"
+			"uri":"roofCollector.bin"
 		}
 	]
 }

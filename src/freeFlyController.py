@@ -18,7 +18,7 @@ class FreeFlyController(Controller):
         self.pitch = 0.0
         self.yaw = 0.0
         self.up = glm.vec3(0.0, 1.0, 0.0)
-        self.flySpeed = 500.0
+        self.flySpeed = 5.0
         self.turnSensitivity = 0.2
 
     def getForward(self):

@@ -16,7 +16,6 @@ class SidePanel(qtw.QWidget):
         self.dateSlider.slider.valueChanged.connect(self.dateChanged.emit)
         self.solarCollectorSelector = LabeledCheckableComboBox("Solar collectors")
 
-        self.exposureTimeIntervalSlider = RangeSlider("Exposure time interval", 0, 365)
         self.calculationButton = qtw.QPushButton("Calculate")
         self.calculationButton.pressed.connect(self.requestedCalculation)
 
@@ -36,7 +35,6 @@ class SidePanel(qtw.QWidget):
 
         layout.addWidget(self.dateSlider)
         layout.addWidget(self.solarCollectorSelector)
-        layout.addWidget(self.exposureTimeIntervalSlider)
         layout.addWidget(self.calculationButton)
         layout.addWidget(self.powerTable)
 

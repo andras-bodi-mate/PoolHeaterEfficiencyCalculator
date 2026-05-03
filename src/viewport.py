@@ -67,19 +67,21 @@ class Viewport(qglw.QOpenGLWidget):
 
         self.scene = Scene()
         self.scene.rootObjects.append(House(Core.getPath("res/models/house.gltf")))
-        self.scene.roofSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnRoof.gltf"))
-        self.scene.shedSolarCollector = SolarCollector(Core.getPath("res/models/solarCollectorOnShed.gltf"))
-        self.scene.rootObjects.append(self.scene.roofSolarCollector)
-        self.scene.rootObjects.append(self.scene.shedSolarCollector)
+        self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/shedCollector.gltf")))
+        self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/garageCollector.gltf")))
+        self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/roofCollector.gltf")))
 
         self.scene.userCamera = PerspectiveCamera()
-        self.scene.userCamera.position = glm.vec3(0.0, 0.0, -2000.0)
+        self.scene.userCamera.position = glm.vec3(0.0, 0.0, -20.0)
         self.scene.sunCamera = OrthographicCamera()
         self.scene.sunCamera.controller = ZoomController.fromCamera(self.scene.sunCamera)
         self.scene.shadowCamera = OrthographicCamera(fixedAspectRatio = True)
+        self.scene.measurementCamera = OrthographicCamera(fixedAspectRatio = True)
+
         self.scene.cameras.append(self.scene.userCamera)
         self.scene.cameras.append(self.scene.sunCamera)
         self.scene.cameras.append(self.scene.shadowCamera)
+        self.scene.cameras.append(self.scene.measurementCamera)
         self.scene.activeCamera = self.scene.userCamera
 
         self.scene.sunLight = SunLight()

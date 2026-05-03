@@ -6,7 +6,7 @@ from controller import Controller
 class OrthographicCamera(Camera):
     def __init__(self, controller: Controller = None, fixedAspectRatio = False):
         super().__init__(controller, fixedAspectRatio)
-        self.distance = 5000.0
+        self.distance = 50.0
 
         self.updateProjectionMatrix(1.0)
         self.updateViewMatrix()
@@ -18,7 +18,7 @@ class OrthographicCamera(Camera):
         self.projectionMatrix = glm.ortho(
             -self.scale * aspectRatio, self.scale * aspectRatio,
             -self.scale, self.scale,
-            100.0, 10000.0
+            1.0, 100.0
         )
     
     def updateViewMatrix(self):
