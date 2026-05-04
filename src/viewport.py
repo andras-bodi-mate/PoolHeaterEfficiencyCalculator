@@ -19,8 +19,7 @@ from freeFlyController import FreeFlyController
 from zoomController import ZoomController
 from sunLight import SunLight
 from house import House
-from solarCollector import SolarCollector
-from sky import Sky
+from gltfLoader import GltfLoader
 from renderer import Renderer
 from renderPass import RenderPassInfo
 from widgets import Selector
@@ -67,10 +66,7 @@ class Viewport(qglw.QOpenGLWidget):
 
         self.scene = Scene()
         self.scene.rootObjects.append(House(Core.getPath("res/models/house.gltf")))
-        self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/shedCollector.gltf")))
-        self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/garageCollector.gltf")))
-        self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/roofCollector.gltf")))
-        self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/poolCollector.gltf")))
+        self.scene.rootObjects.extend(GltfLoader(Core.getPath("res/models/solarCollectors.gltf")).loadRootObjects())
 
         self.scene.userCamera = PerspectiveCamera()
         self.scene.userCamera.position = glm.vec3(0.0, 0.0, -20.0)
@@ -78,6 +74,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.scene.sunCamera.controller = ZoomController.fromCamera(self.scene.sunCamera)
         self.scene.shadowCamera = OrthographicCamera(fixedAspectRatio = True)
         self.scene.measurementCamera = OrthographicCamera(fixedAspectRatio = True)
+        self.scene.measurementCamera.scale = 30.0
 
         self.scene.cameras.append(self.scene.userCamera)
         self.scene.cameras.append(self.scene.sunCamera)

@@ -57,10 +57,10 @@ class MultiLinePlot(PlotBase):
             xValues = range(len(lineValues[0]))
 
         self.legend.clear()
-        for i, values in enumerate(lineValues):
-            self.curves[i].clear()
+        for i in range(len(self.curves)):
+            self.curves[i].setData(x = [], y = [])
             if self.fillCurves:
-                self.fillCurves[i].clear()
+                self.fillCurves[i].setData(x = [], y = [])
 
         for i, values in enumerate(lineValues):
             self.curves[i].setData(x = xValues, y = values)

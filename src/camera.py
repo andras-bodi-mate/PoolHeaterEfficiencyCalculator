@@ -10,7 +10,7 @@ class Camera(ABC):
         self.fixedAspectRatio = fixedAspectRatio
         self.position = glm.vec3(0.0)
         self.forward = glm.vec3(0.0, 0.0, -1.0)
-        self.scale = 15.0
+        self.scale = 20.0
 
         self.projectionMatrix: glm.mat4x4 = None
         self.viewMatrix: glm.mat4x4 = None

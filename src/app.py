@@ -107,15 +107,38 @@ class App:
             f"Time interval: {intervalStartTime.hour:02}:{intervalStartTime.minute:02} - {intervalEndTime.hour:02}:{intervalEndTime.minute:02}"
         )
         selectedSolarCollectors: list[Object] = self.sidePanel.solarCollectorSelector.list.getCheckedItemsData()
+        
+        table = self.sidePanel.powerTable
+
+        header = table.horizontalHeader()
+        sortingColumn = header.sortIndicatorSection()
+        sortingOrder = header.sortIndicatorOrder()
+
+        table.setSortingEnabled(False)
+
+        table.clearContents()
+        table.setRowCount(0)
+
         for i, object in enumerate(selectedSolarCollectors):
-            self.sidePanel.powerTable.setItem(i, 0, qtw.QTableWidgetItem(object.name))
+            row = table.rowCount()
+            table.insertRow(row)
+
+            table.setItem(row, 0, qtw.QTableWidgetItem(object.name))
+
             intervalPowerCurve = []
             for timeValue, power in zip(timeValues, self.powerCurves[i]):
-                time = datetime.datetime.fromtimestamp(timeValue, tz = self.utcPlus2)
+                time = datetime.datetime.fromtimestamp(timeValue, tz=self.utcPlus2)
                 if intervalStartTime <= time <= intervalEndTime:
                     intervalPowerCurve.append(power)
-            energy = np.trapezoid(np.asarray(intervalPowerCurve))
-            self.sidePanel.powerTable.setItem(i, 1, qtw.QTableWidgetItem(f"{energy / 1000:.2f} kWh"))
+
+            energy = float(np.trapezoid(np.asarray(intervalPowerCurve)))
+            item = qtw.QTableWidgetItem()
+            item.setData(qtc.Qt.ItemDataRole.DisplayRole, round(energy / 1000, 2))
+
+            self.sidePanel.powerTable.setItem(row, 1, item)
+
+        table.setSortingEnabled(True)
+        table.sortItems(sortingColumn, sortingOrder)
 
         self.dataPanel.intervalStartMarker.setPos(glm.mix(0, 24, start / (24 * 4)))
         self.dataPanel.intervalEndMarker.setPos(glm.mix(0, 24, end / (24 * 4)))

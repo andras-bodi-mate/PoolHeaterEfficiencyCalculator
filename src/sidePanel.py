@@ -23,18 +23,15 @@ class SidePanel(qtw.QWidget):
         self.calculationButton.pressed.connect(self.requestedCalculation)
 
         self.powerTable = qtw.QTableWidget(0, 2)
-        self.powerTable.setHorizontalHeaderLabels(["Collector", "Power"])
+        self.powerTable.setHorizontalHeaderLabels(["Collector", "Power (kWh)"])
         self.powerTable.verticalHeader().setVisible(False)
         self.powerTable.setEditTriggers(qtw.QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.powerTable.setFocusPolicy(qtc.Qt.FocusPolicy.NoFocus)
 
         self.powerTable.horizontalHeader().setSectionResizeMode(qtw.QHeaderView.ResizeMode.Stretch)
-        self.powerTable.verticalHeader().setSectionResizeMode(qtw.QHeaderView.ResizeMode.Fixed)
-
-        self.powerTable.setSizePolicy(qtw.QSizePolicy.Policy.Expanding, qtw.QSizePolicy.Policy.Minimum)
-        self.powerTable.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.powerTable.verticalHeader().setSectionResizeMode(qtw.QHeaderView.ResizeMode.ResizeToContents)
 
         self.powerTable.setSelectionMode(qtw.QTableWidget.SelectionMode.NoSelection)
+        self.powerTable.setSortingEnabled(True)
 
         layout.addWidget(self.dateSlider)
         layout.addWidget(self.solarCollectorSelector)
