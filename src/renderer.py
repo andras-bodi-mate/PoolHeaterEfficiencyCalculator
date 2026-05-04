@@ -65,7 +65,8 @@ class Renderer(GraphicsResource):
         totalArea = (2 * scene.measurementCamera.scale) ** 2
         pixelArea = totalArea / (self.measurementResolution ** 2)
 
-        power = query.samples * pixelArea
+        solarIrradiance = 1361 * sunlightTransmission
+        power = solarIrradiance * query.samples * pixelArea
 
         return power
 

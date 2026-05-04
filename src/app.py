@@ -96,6 +96,30 @@ class App:
 
         self.viewportPanel.viewport.repaint()
 
+    def timeIntervalChanged(self, timeInterval: tuple[int, int]):
+        start, end = timeInterval
+        intervalStartTime = self.startTime + datetime.timedelta(minutes = start * 15)
+        intervalEndTime = self.startTime + datetime.timedelta(minutes = end * 15)
+
+        xValues, timeValues = self.iterateOverDay(self.days)
+
+        self.sidePanel.exposureTimeIntervalSlider.label.setText(
+            f"Time interval: {intervalStartTime.hour:02}:{intervalStartTime.minute:02} - {intervalEndTime.hour:02}:{intervalEndTime.minute:02}"
+        )
+        selectedSolarCollectors: list[Object] = self.sidePanel.solarCollectorSelector.list.getCheckedItemsData()
+        for i, object in enumerate(selectedSolarCollectors):
+            self.sidePanel.powerTable.setItem(i, 0, qtw.QTableWidgetItem(object.name))
+            intervalPowerCurve = []
+            for timeValue, power in zip(timeValues, self.powerCurves[i]):
+                time = datetime.datetime.fromtimestamp(timeValue, tz = self.utcPlus2)
+                if intervalStartTime <= time <= intervalEndTime:
+                    intervalPowerCurve.append(power)
+            energy = np.trapezoid(np.asarray(intervalPowerCurve))
+            self.sidePanel.powerTable.setItem(i, 1, qtw.QTableWidgetItem(f"{energy / 1000:.2f} kWh"))
+
+        self.dataPanel.intervalStartMarker.setPos(glm.mix(0, 24, start / (24 * 4)))
+        self.dataPanel.intervalEndMarker.setPos(glm.mix(0, 24, end / (24 * 4)))
+
     def solarCollectorPowerCurve(self, solarCollector: Object, timeValues: NDArray[np.float64]):
         self.viewportPanel.viewport.makeCurrent()
         self.viewportPanel.viewport.setupContextForRender()
@@ -123,16 +147,15 @@ class App:
         self.dataPanel.powerPlot.numLines = numSolarCollectors
 
         xValues, timeValues = self.iterateOverDay(self.days)
-        powerCurves = []
 
-        for i, object in enumerate(selectedSolarCollectors):
-            self.sidePanel.powerTable.setItem(i, 0, qtw.QTableWidgetItem(object.name))
+        self.powerCurves = []
+        for object in selectedSolarCollectors:
             powerCurve = self.solarCollectorPowerCurve(object, timeValues)
-            powerCurves.append(powerCurve)
-            power = np.trapezoid(np.asarray(powerCurve))
-            self.sidePanel.powerTable.setItem(i, 1, qtw.QTableWidgetItem(f"{power:.2f} Wh"))
+            self.powerCurves.append(powerCurve)
 
-        self.dataPanel.powerPlot.update(xValues = xValues, lineValues = powerCurves, labels = [object.name for object in selectedSolarCollectors])
+        self.dataPanel.powerPlot.update(xValues = xValues, lineValues = self.powerCurves, labels = [object.name for object in selectedSolarCollectors])
+
+        self.timeIntervalChanged(self.sidePanel.exposureTimeIntervalSlider.slider.value())
 
     def initializeQt(self):
         surfaceFormat = qtg.QSurfaceFormat()
@@ -168,9 +191,11 @@ class App:
 
         self.sidePanel.dateChanged.connect(self.dateChanged)
         self.sidePanel.requestedCalculation.connect(self.calculateSolarCollectorPowers)
+        self.sidePanel.timeIntervalChanged.connect(self.timeIntervalChanged)
         self.viewportPanel.timeChanged.connect(self.timeChanged)
 
         self.sidePanel.dateChanged.emit(self.sidePanel.dateSlider.slider.value())
+        self.sidePanel.timeIntervalChanged.emit(self.sidePanel.exposureTimeIntervalSlider.slider.value())
 
         self.viewportDataSplitter.addWidget(self.viewportPanel)
         self.viewportDataSplitter.addWidget(self.dataPanel)

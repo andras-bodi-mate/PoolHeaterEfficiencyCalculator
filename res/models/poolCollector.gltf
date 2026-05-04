@@ -18,7 +18,7 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"House"
+			"name":"Pool Collector"
 		}
 	],
 	"materials":[
@@ -48,7 +48,7 @@
 	],
 	"meshes":[
 		{
-			"name":"Body1",
+			"name":"Body1.004",
 			"primitives":[
 				{
 					"attributes":{
@@ -66,68 +66,68 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":15983,
+			"count":848,
 			"max":[
-				8.016743659973145,
-				10.38391399383545,
-				8.50000286102295
+				7.996432304382324,
+				1.1675318479537964,
+				-9.477387428283691
 			],
 			"min":[
-				-6.000004291534424,
-				-1.3500001430511475,
-				-13.93000316619873
+				7.576431751251221,
+				0.464711457490921,
+				-13.477387428283691
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":15983,
+			"count":848,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":15983,
+			"count":848,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
 			"componentType":5123,
-			"count":56670,
+			"count":2706,
 			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":191796,
+			"byteLength":10176,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":191796,
-			"byteOffset":191796,
+			"byteLength":10176,
+			"byteOffset":10176,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":127864,
-			"byteOffset":383592,
+			"byteLength":6784,
+			"byteOffset":20352,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":113340,
-			"byteOffset":511456,
+			"byteLength":5412,
+			"byteOffset":27136,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":624796,
-			"uri":"house.bin"
+			"byteLength":32548,
+			"uri":"poolCollector.bin"
 		}
 	]
 }

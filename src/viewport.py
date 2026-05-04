@@ -70,6 +70,7 @@ class Viewport(qglw.QOpenGLWidget):
         self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/shedCollector.gltf")))
         self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/garageCollector.gltf")))
         self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/roofCollector.gltf")))
+        self.scene.rootObjects.append(SolarCollector(Core.getPath("res/models/poolCollector.gltf")))
 
         self.scene.userCamera = PerspectiveCamera()
         self.scene.userCamera.position = glm.vec3(0.0, 0.0, -20.0)

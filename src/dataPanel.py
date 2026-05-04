@@ -34,7 +34,11 @@ class DataPanel(qtw.QTabWidget):
             title = "Sun power"
         )
         self.timeMarker2 = pg.InfiniteLine(pos = 0, angle = 90, pen = pg.mkPen((255, 0, 0), width = 2))
+        self.intervalStartMarker = pg.InfiniteLine(pos = 0, angle = 90, pen = pg.mkPen((100, 100, 100), width = 2))
+        self.intervalEndMarker = pg.InfiniteLine(pos = 0, angle = 90, pen = pg.mkPen((100, 100, 100), width = 2))
         self.powerPlot.addItem(self.timeMarker2)
+        self.powerPlot.addItem(self.intervalStartMarker)
+        self.powerPlot.addItem(self.intervalEndMarker)
         sunPowerLayout.addWidget(self.powerPlot)
 
         self.addTab(self.sunPositionWidget, "Position")

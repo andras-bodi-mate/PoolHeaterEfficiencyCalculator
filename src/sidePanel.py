@@ -6,6 +6,7 @@ from widgets import Slider, RangeSlider, LabeledCheckableComboBox
 class SidePanel(qtw.QWidget):
     dateChanged = qtc.pyqtSignal(int)
     requestedCalculation = qtc.pyqtSignal()
+    timeIntervalChanged = qtc.pyqtSignal(tuple)
 
     def __init__(self):
         super().__init__()
@@ -16,6 +17,8 @@ class SidePanel(qtw.QWidget):
         self.dateSlider.slider.valueChanged.connect(self.dateChanged.emit)
         self.solarCollectorSelector = LabeledCheckableComboBox("Solar collectors")
 
+        self.exposureTimeIntervalSlider = RangeSlider("Time interval", 0, 24 * 4 - 1)
+        self.exposureTimeIntervalSlider.slider.valueChanged.connect(self.timeIntervalChanged)
         self.calculationButton = qtw.QPushButton("Calculate")
         self.calculationButton.pressed.connect(self.requestedCalculation)
 
@@ -35,6 +38,7 @@ class SidePanel(qtw.QWidget):
 
         layout.addWidget(self.dateSlider)
         layout.addWidget(self.solarCollectorSelector)
+        layout.addWidget(self.exposureTimeIntervalSlider)
         layout.addWidget(self.calculationButton)
         layout.addWidget(self.powerTable)
 
